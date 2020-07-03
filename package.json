@@ -1,0 +1,26 @@
+{
+  "name": "solar-system-3d",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "dependencies": {
+    "babylonjs": "^4.1.0",
+    "babylonjs-materials": "^4.1.0",
+    "babylonjs-procedural-textures": "^4.1.0",
+    "electron": "^9.0.5"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Allex6/Solar-System-3D.git"
+  },
+  "author": "Alex Souza",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Allex6/Solar-System-3D/issues"
+  },
+  "homepage": "https://github.com/Allex6/Solar-System-3D#readme"
+}
