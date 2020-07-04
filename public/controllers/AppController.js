@@ -35,6 +35,9 @@ class AppController {
 		this.scene.debugLayer.show({
 			embedMode: true
 		});
+		/*this.scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
+		this.scene.fogDensity = 0.01;
+		this.scene.fogColor = new BABYLON.Color3(0, 0, 0);*/
 
 		this.devCamera = new BABYLON.FlyCamera("DevCamera", new BABYLON.Vector3(0, 0, -40), this.scene);
 		this.devCamera.attachControl(this.canvas, true);
@@ -45,7 +48,6 @@ class AppController {
 		this.glowEffect = new BABYLON.GlowLayer("glow", this.scene, {mainTextureFixedSize: 256, blurKernelSize: 128, mainTextureSamples: 4});
 
 		this.glowEffect.intensity = 2.2;
-
 
 
 
@@ -428,6 +430,98 @@ class AppController {
 		this.initVenus();
 		this.initMercury();
 		this.initJupiter();
+		this.initSaturn();
+		this.initUranus();
+		this.initNeptune();
+
+		//this.initKuilperBelt();
+
+		for(let name in this.planets){
+
+			// Rotação dos planetas
+			let alpha = 0;
+			let velocity = 0;
+			let xValue = 0;
+			let zValue = 0;
+
+			switch (name) {
+
+				case 'mercury':
+					alpha = 0;
+					velocity = 0;
+					xValue = 20;
+					zValue = 20;
+					velocity = 0.009;
+					break;
+
+				case 'earth':
+					alpha = 0;
+					velocity = 0;
+					xValue = 50;
+					zValue = 50;
+					velocity = 0.0058;
+					break;
+
+				case 'mars':
+					alpha = 0;
+					velocity = 0;
+					xValue = 65;
+					zValue = 65;
+					velocity = 0.005;
+					break;
+
+				case 'venus':
+					alpha = 0;
+					velocity = 0;
+					xValue = 35;
+					zValue = 35;
+					velocity = 0.007;
+					break;
+
+				case 'jupiter':
+					alpha = 0;
+					velocity = 0;
+					xValue = 80;
+					zValue = 80;
+					velocity = 0.004;
+					break;
+
+				case 'saturn':
+					alpha = 0;
+					velocity = 0;
+					xValue = 95;
+					zValue = 95;
+					velocity = 0.0035;
+					break;
+
+				case 'uranus':
+					alpha = 0;
+					velocity = 0;
+					xValue = 110;
+					zValue = 110;
+					velocity = 0.003;
+					break;
+
+				case 'neptune':
+					alpha = 0;
+					velocity = 0;
+					xValue = 125;
+					zValue = 125;
+					velocity = 0.0025;
+					break;
+
+			}
+			
+		    this.scene.registerBeforeRender(()=>{
+
+		        this.planets[name].position.x = xValue * Math.cos(alpha);
+		        //this.planets[name].position.y = 0;
+		        this.planets[name].position.z = zValue * Math.sin(alpha);
+		        alpha += velocity;
+
+		    });
+
+		}
 
 	}
 
@@ -438,10 +532,10 @@ class AppController {
 		sunMaterial.distortionTexture = new BABYLON.Texture(__dirname + './../textures/Sun/distortion.png', this.scene);
 		//sunMaterial.opacityTexture = new BABYLON.Texture(__dirname + './../textures/Sun/opacity.png', this.scene);
 
-		sunMaterial.emissiveColor = new BABYLON.Color3(1, 0.4, 0);
+		sunMaterial.emissiveColor = new BABYLON.Color3(1, 0.8, 0.8);
 		sunMaterial.speed = 0.15;
 
-		this.sun = new BABYLON.MeshBuilder.CreateSphere('sun', {diameter: 20}, this.scene);
+		this.sun = new BABYLON.MeshBuilder.CreateSphere('sun', {diameter: 15}, this.scene);
 
 		this.glowEffect.addIncludedOnlyMesh(this.sun);
 
@@ -450,7 +544,7 @@ class AppController {
 		let vls = new BABYLON.VolumetricLightScatteringPostProcess('vls', { postProcessRatio: 1.0, passRatio: 1.0 }, this.devCamera, this.sun, 100, BABYLON.Texture.BILINEAR_SAMPLINGMODE, this.engine, false, this.scene);
 
 
-		let sunParticles = new BABYLON.GPUParticleSystem('sunParticles', {capacity: 1000}, this.scene);
+		/*let sunParticles = new BABYLON.GPUParticleSystem('sunParticles', {capacity: 1000}, this.scene);
 		sunParticles.particleTexture = new BABYLON.Texture(__dirname + './../textures/Sun/particle.jpg', this.scene);
 
 		sunParticles.emitter = this.sun;
@@ -468,42 +562,72 @@ class AppController {
 		sunParticles.direction1 = new BABYLON.Vector3(-8, -8, -8);
 		sunParticles.direction2 = new BABYLON.Vector3(8, 8, 8);
 
-		sunParticles.start();
+		sunParticles.start();*/
 
 	}
 
 	initEarth(){
 
 		let texturePath = (__dirname + './../textures/Earth/earth2.jpg');
-		this.createPlanet('earth', 0.2, texturePath, new BABYLON.Vector3(40, 0, 0));
+		this.createPlanet('earth', 2.5, texturePath, new BABYLON.Vector3(50, 0, 0));
+		this.createMoon('moon', 0.5, (__dirname + './../textures/Moon/surface.jpg'), this.planets['earth'], 0.009);
 
 	}
 
 	initMars(){
 
 		let texturePath = (__dirname + './../textures/Mars/surface.jpg');
-		this.createPlanet('mars', 0.5, texturePath, new BABYLON.Vector3(-40, 0, 0));
+		this.createPlanet('mars', 1.5, texturePath, new BABYLON.Vector3(65, 0, 0));
 
 	}
 
 	initVenus(){
 
 		let texturePath = (__dirname + './../textures/Venus/surface.jpg');
-		this.createPlanet('venus', 0.5, texturePath, new BABYLON.Vector3(-50, 0, 0));
+		this.createPlanet('venus', 2.4, texturePath, new BABYLON.Vector3(35, 0, 0));
 
 	}
 
 	initJupiter(){
 		
 		let texturePath = (__dirname + './../textures/Jupiter/surface.jpg');
-		this.createPlanet('jupiter', 3, texturePath, new BABYLON.Vector3(60, 0, 0));
+		this.createPlanet('jupiter', 3.5, texturePath, new BABYLON.Vector3(80, 0, 0));
+
+		for (let i = 0; i <= 10; i++) {
+
+			let distance = Math.random() * 8.5;
+			
+			this.createMoon('jupiterMoon'+i, (Math.random() * 0.5), (__dirname + './../textures/Moon/surface.jpg'), this.planets['jupiter'], (Math.random() * 0.02), new BABYLON.Vector3(distance, 0, 0));
+
+		}
 
 	}
 
 	initMercury(){
 
 		let texturePath = (__dirname + './../textures/Mercury/surface.jpg');
-		this.createPlanet('mercury', 1, texturePath, new BABYLON.Vector3(90, 0, 0));
+		this.createPlanet('mercury', 1.0, texturePath, new BABYLON.Vector3(20, 0, 0));
+
+	}
+
+	initSaturn(){
+
+		let texturePath = (__dirname + './../textures/Saturn/surface.jpg');
+		this.createPlanet('saturn', 3.0, texturePath, new BABYLON.Vector3(95, 0, 0));
+
+	}
+
+	initUranus(){
+
+		let texturePath = (__dirname + './../textures/Uranus/surface.jpg');
+		this.createPlanet('uranus', 2.0, texturePath, new BABYLON.Vector3(110, 0, 0));
+
+	}
+
+	initNeptune(){
+
+		let texturePath = (__dirname + './../textures/Neptune/surface.jpg');
+		this.createPlanet('neptune', 2.0, texturePath, new BABYLON.Vector3(125, 0, 0));
 
 	}
 
@@ -517,8 +641,82 @@ class AppController {
 		mat.emissiveColor = new BABYLON.Vector3(1,1,1);
 
 		this.planets[name].material = mat;
-
 		this.planets[name].position = position;
+
+		this.planets[name].addLODLevel(500, null);
+
+	}
+
+	createMoon(name, size, texturePath, parent, velocity, distanceFromPlanet = new BABYLON.Vector3(3.5,0,0)){
+
+		let moon = new BABYLON.MeshBuilder.CreateSphere(name, {diameter: size}, this.scene);
+		let mat = new BABYLON.StandardMaterial(name+'Material', this.scene);
+		mat.diffuseTexture = new BABYLON.Texture(texturePath, this.scene);
+
+		mat.emissiveColor = new BABYLON.Vector3(1,1,1);
+
+		moon.material = mat;
+		moon.position = distanceFromPlanet;
+		moon.parent = parent;
+
+		let alpha = 0;
+
+		this.scene.registerBeforeRender(()=>{
+
+	        moon.position.x = 2 * Math.cos(alpha);
+	        moon.position.z = 2 * Math.sin(alpha);
+	        alpha += velocity;
+
+	    });
+
+	}
+
+	initKuilperBelt(){
+
+		let asteroid = new BABYLON.MeshBuilder.CreateSphere('asteroidModel', {diameter: 0.1}, this.scene);
+		let asteroidMaterial = new BABYLON.StandardMaterial('asteroidMaterial', this.scene);
+		asteroidMaterial.emissiveColor = new BABYLON.Color3(1,1,1);
+		asteroidMaterial.diffuseTexture = new BABYLON.Texture(__dirname + './../textures/Asteroid/surface.jpg', this.scene);
+
+		asteroid.material = asteroidMaterial;
+
+		//asteroid.position = new BABYLON.Vector3(10,0,0);
+
+		asteroid.addLODLevel(10, null);
+
+		let distance = 130;
+		let alpha = 0;
+		let velocity = 0.01;
+
+		for (let i = 0; i <= 5000; i++) {
+
+			switch (i) {
+
+				case 1000:
+					distance = 131;
+					break;
+
+				case 2000:
+					distance = 132;
+					break;
+
+				case 3000:
+					distance = 133;
+					break;
+
+				case 4000:
+					distance = 134;
+					break;
+
+			}
+			
+			let newInstance = asteroid.createInstance('asteroid'+i);
+
+			newInstance.position.x = distance * Math.cos(alpha);
+		    newInstance.position.z = distance * Math.sin(alpha);
+		    alpha += velocity;
+
+		}
 
 	}
 
