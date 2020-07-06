@@ -48,6 +48,8 @@ class AppController {
 
 	initializeStars(){
 
+		//this.createUniverseBox();
+
 		this.initSun();
 		this.initEarth();
 		this.initMars();
@@ -103,7 +105,7 @@ class AppController {
 					zValue = 35;
 					velocity = 0.007;
 					break;
-					
+
 				case 'jupiter':
 					alpha = 0;
 					velocity = 0;
@@ -171,6 +173,8 @@ class AppController {
 		glowEffect.addIncludedOnlyMesh(this.sun);
 
 		this.sun.material = sunMaterial;
+
+		//this.sun.renderingGroupId = 20;
 
 		let vls = new BABYLON.VolumetricLightScatteringPostProcess('vls', { postProcessRatio: 1.0, passRatio: 1.0 }, this.devCamera, this.sun, 100, BABYLON.Texture.BILINEAR_SAMPLINGMODE, this.engine, false, this.scene);
 
@@ -276,6 +280,8 @@ class AppController {
 
 		this.planets[name].addLODLevel(500, null);
 
+		//this.planets[name].renderingGroupId = 10;
+
 		this.scene.registerBeforeRender(()=>{
 
 			this.planets[name].rotation.y += 0.01;
@@ -297,6 +303,8 @@ class AppController {
 		moon.parent = parent;
 
 		moon.addLODLevel(500, null);
+
+		//moon.renderingGroupId = 5;
 
 		if (this.highlightMeshes) {
 	    	this.highlightMeshes.addExcludedMesh(moon);
@@ -377,6 +385,23 @@ class AppController {
 		this.highlightMeshes.addMesh(this.planets['earth'], new BABYLON.Color3(0, 0.5, 0.6));
 		this.highlightMeshes.addMesh(this.planets['mars'], new BABYLON.Color3(0.7, 0.5, 0));
 		this.highlightMeshes.addMesh(this.planets['venus'], new BABYLON.Color3(0.8, 0.6, 0));
+
+	}
+
+	createUniverseBox(){
+
+		let universeBox = BABYLON.Mesh.CreateBox("universeBox", 10000.0, this.scene);
+		let universeBoxMaterial = new BABYLON.StandardMaterial("universeBoxMaterial", this.scene);
+		universeBoxMaterial.backFaceCulling = false;
+		universeBoxMaterial.disableLighting = true;
+		universeBox.material = universeBoxMaterial;
+
+		universeBox.infiniteDistance = true;
+
+		universeBoxMaterial.reflectionTexture = new BABYLON.CubeTexture(__dirname + './../textures/UniverseBox/skybox', this.scene);
+		universeBoxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+
+		//universeBox.renderingGroupId = 0;
 
 	}
 
