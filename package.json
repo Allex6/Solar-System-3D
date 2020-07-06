@@ -11,7 +11,8 @@
   },
   "devDependencies": {},
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "win64": "electron-packager . Solar System 3D --platform=win32 --arch=x64"
   },
   "repository": {
     "type": "git",
