@@ -42,13 +42,18 @@ class AppController {
 		this.devCamera = new BABYLON.FlyCamera("DevCamera", new BABYLON.Vector3(0, 0, -40), this.scene);
 		this.devCamera.attachControl(this.canvas, true);
 
+		this.devCamera.position = new BABYLON.Vector3(0, 120, 0);
+		this.devCamera.rotation.x = Math.PI / 2;
+
+		//this.devCamera.fov = 1;
+
 		this.scene.clearColor = new BABYLON.Color3(0,0,0).toLinearSpace();
 
 	}
 
 	initializeStars(){
 
-		//this.createUniverseBox();
+		this.createUniverseBox();
 
 		this.initSun();
 		this.initEarth();
@@ -155,19 +160,20 @@ class AppController {
 
 	initSun(){
 
-		let sunMaterial = new FireMaterial('sunMaterial', this.scene);
-		sunMaterial.diffuseTexture = new BABYLON.Texture(__dirname + './../textures/Sun/parti2.jpg', this.scene);
-		sunMaterial.distortionTexture = new BABYLON.Texture(__dirname + './../textures/Sun/distortion.png', this.scene);
+		let sunMaterial = new BABYLON.StandardMaterial('sunMaterial', this.scene);
+		sunMaterial.diffuseTexture = new BABYLON.Texture(__dirname + './../textures/Sun/surface.jpg', this.scene);
+		//sunMaterial.distortionTexture = new BABYLON.Texture(__dirname + './../textures/Sun/distortion.png', this.scene);
 		//sunMaterial.opacityTexture = new BABYLON.Texture(__dirname + './../textures/Sun/opacity.png', this.scene);
 
-		sunMaterial.emissiveColor = new BABYLON.Color3(1, 0.8, 0.8);
-		sunMaterial.speed = 0.15;
+		sunMaterial.emissiveColor = new BABYLON.Color3(1, 1, 1);
+		//sunMaterial.diffuseColor = new BABYLON.Color3(1, 0, 0);
+		//sunMaterial.speed = 0.15;
 
 		this.sun = new BABYLON.MeshBuilder.CreateSphere('sun', {diameter: 15}, this.scene);
 
 
 		// Glow Effect
-		let glowEffect = new BABYLON.GlowLayer("glow", this.scene, {mainTextureFixedSize: 256, blurKernelSize: 128, mainTextureSamples: 4});
+		/**/let glowEffect = new BABYLON.GlowLayer("glow", this.scene, {mainTextureFixedSize: 256, blurKernelSize: 128, mainTextureSamples: 4});
 
 		glowEffect.intensity = 2.2;
 		glowEffect.addIncludedOnlyMesh(this.sun);
@@ -176,8 +182,8 @@ class AppController {
 
 		//this.sun.renderingGroupId = 20;
 
-		let vls = new BABYLON.VolumetricLightScatteringPostProcess('vls', { postProcessRatio: 1.0, passRatio: 1.0 }, this.devCamera, this.sun, 100, BABYLON.Texture.BILINEAR_SAMPLINGMODE, this.engine, false, this.scene);
-
+		let vls = new BABYLON.VolumetricLightScatteringPostProcess('vls', { postProcessRatio: 1.0, passRatio: 1.0 }, this.devCamera, this.sun, 75, BABYLON.Texture.BILINEAR_SAMPLINGMODE, this.engine, false, this.scene);
+		//vls.useDiffuseColor = true;
 
 		/*let sunParticles = new BABYLON.GPUParticleSystem('sunParticles', {capacity: 1000}, this.scene);
 		sunParticles.particleTexture = new BABYLON.Texture(__dirname + './../textures/Sun/particle.jpg', this.scene);
@@ -203,7 +209,7 @@ class AppController {
 
 	initEarth(){
 
-		let texturePath = (__dirname + './../textures/Earth/earth2.jpg');
+		let texturePath = (__dirname + './../textures/Earth/surface.jpg');
 		this.createPlanet('earth', 2.5, texturePath, new BABYLON.Vector3(50, 0, 0));
 		this.createMoon('moon', 0.5, (__dirname + './../textures/Moon/surface.jpg'), this.planets['earth'], 0.015);
 
@@ -240,7 +246,7 @@ class AppController {
 
 	initMercury(){
 
-		let texturePath = (__dirname + './../textures/Mercury/surface.jpg');
+		let texturePath = (__dirname + './../textures/Mercury/surface2.jpg');
 		this.createPlanet('mercury', 1.0, texturePath, new BABYLON.Vector3(20, 0, 0));
 
 	}
