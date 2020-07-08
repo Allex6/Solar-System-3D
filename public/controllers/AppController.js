@@ -35,6 +35,9 @@ class AppController {
 		this.scene.debugLayer.show({
 			embedMode: true
 		});
+
+		this.scene.ambientColor = new BABYLON.Color3(1,1,1);
+
 		/*this.scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
 		this.scene.fogDensity = 0.01;
 		this.scene.fogColor = new BABYLON.Color3(0, 0, 0);*/
@@ -45,7 +48,7 @@ class AppController {
 		this.devCamera.position = new BABYLON.Vector3(0, 120, 0);
 		this.devCamera.rotation.x = Math.PI / 2;
 
-		//this.devCamera.fov = 1;
+		this.devCamera.fov = 0.5;
 
 		this.scene.clearColor = new BABYLON.Color3(0,0,0).toLinearSpace();
 
@@ -68,8 +71,9 @@ class AppController {
 		//this.initKuilperBelt();
 
 		this.controlAtmospheres();
+		//this.createShadows();
 
-		for(let name in this.planets){
+		/*for(let name in this.planets){
 
 			// Rotação dos planetas
 			let alpha = 0;
@@ -154,7 +158,7 @@ class AppController {
 
 		    });
 
-		}
+		}*/
 
 	}
 
@@ -166,23 +170,27 @@ class AppController {
 		//sunMaterial.opacityTexture = new BABYLON.Texture(__dirname + './../textures/Sun/opacity.png', this.scene);
 
 		sunMaterial.emissiveColor = new BABYLON.Color3(1, 1, 1);
-		//sunMaterial.diffuseColor = new BABYLON.Color3(1, 0, 0);
+		sunMaterial.diffuseColor = new BABYLON.Color3(1, 1, 1);
+		sunMaterial.linkEmissiveWithDiffuse = true;
 		//sunMaterial.speed = 0.15;
 
 		this.sun = new BABYLON.MeshBuilder.CreateSphere('sun', {diameter: 15}, this.scene);
 
 
 		// Glow Effect
-		/**/let glowEffect = new BABYLON.GlowLayer("glow", this.scene, {mainTextureFixedSize: 256, blurKernelSize: 128, mainTextureSamples: 4});
+		/*let glowEffect = new BABYLON.GlowLayer("glow", this.scene, {mainTextureFixedSize: 256, blurKernelSize: 128, mainTextureSamples: 4});
 
 		glowEffect.intensity = 2.2;
-		glowEffect.addIncludedOnlyMesh(this.sun);
+		glowEffect.addIncludedOnlyMesh(this.sun);*/
 
 		this.sun.material = sunMaterial;
 
+		//this.sunLight = new BABYLON.PointLight('sunLight', new BABYLON.Vector3(0,0,0), this.scene);
+		//this.sunLight.intensity = 100;
+
 		//this.sun.renderingGroupId = 20;
 
-		let vls = new BABYLON.VolumetricLightScatteringPostProcess('vls', { postProcessRatio: 1.0, passRatio: 1.0 }, this.devCamera, this.sun, 75, BABYLON.Texture.BILINEAR_SAMPLINGMODE, this.engine, false, this.scene);
+		//let vls = new BABYLON.VolumetricLightScatteringPostProcess('vls', { postProcessRatio: 1.0, passRatio: 1.0 }, this.devCamera, this.sun, 75, BABYLON.Texture.BILINEAR_SAMPLINGMODE, this.engine, false, this.scene);
 		//vls.useDiffuseColor = true;
 
 		/*let sunParticles = new BABYLON.GPUParticleSystem('sunParticles', {capacity: 1000}, this.scene);
@@ -210,22 +218,80 @@ class AppController {
 	initEarth(){
 
 		let texturePath = (__dirname + './../textures/Earth/surface.jpg');
-		this.createPlanet('earth', 2.5, texturePath, new BABYLON.Vector3(50, 0, 0));
+		let normalPath = (__dirname + './../textures/Earth/normal.jpg');
+		let cloudsTexture = (__dirname + './../textures/Earth/clouds.jpg');
+
+		this.createPlanet(
+			'earth', 2.5, 
+			texturePath, 
+			new BABYLON.Vector3(50, 0, 0),
+			normalPath,
+			cloudsTexture
+		);
+
 		this.createMoon('moon', 0.5, (__dirname + './../textures/Moon/surface.jpg'), this.planets['earth'], 0.015);
+
+		/*let anim = new BABYLON.Animation("myAnimation", "uOffset", 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+
+		let keys = [];
+	    //At the animation key 0, the value of scaling is "1"
+	    keys.push({
+	        frame: 0,
+	        value: 1
+	    });
+
+	    //At the animation key 20, the value of scaling is "0.2"
+	    keys.push({
+	        frame: 20,
+	        value: 0.2
+	    });
+
+	    //At the animation key 100, the value of scaling is "1"
+	    keys.push({
+	        frame: 100,
+	        value: 1
+	    });
+
+	    //Adding keys to the animation object
+		anim.setKeys(keys);
+
+		//Then add the animation object to box1
+		this.planets['earth'].material.lightmapTexture.animations.push(anim);
+
+		//Finally, launch animations on box1, from key 0 to key 100 with loop activated
+		this.scene.beginAnimation(this.planets['earth'].material.lightmapTexture, 0, 100, true);*/
 
 	}
 
 	initMars(){
 
 		let texturePath = (__dirname + './../textures/Mars/surface.jpg');
-		this.createPlanet('mars', 1.5, texturePath, new BABYLON.Vector3(65, 0, 0));
+		let normalPath = (__dirname + './../textures/Mars/normal.jpg');
+		let cloudsTexture = (__dirname + './../textures/Earth/clouds.jpg');
+
+		this.createPlanet('mars', 
+			1.5, 
+			texturePath, 
+			new BABYLON.Vector3(65, 0, 0), 
+			normalPath,
+			cloudsTexture
+		);
 
 	}
 
 	initVenus(){
 
 		let texturePath = (__dirname + './../textures/Venus/surface.jpg');
-		this.createPlanet('venus', 2.4, texturePath, new BABYLON.Vector3(35, 0, 0));
+		let normalPath = (__dirname + './../textures/Venus/normal.jpg');
+		let atmosphere = (__dirname + './../textures/Venus/atmosphere.jpg');
+
+		this.createPlanet('venus', 
+			2.4, 
+			texturePath, 
+			new BABYLON.Vector3(35, 0, 0),
+			normalPath,
+			atmosphere
+		);
 
 	}
 
@@ -246,51 +312,97 @@ class AppController {
 
 	initMercury(){
 
-		let texturePath = (__dirname + './../textures/Mercury/surface2.jpg');
-		this.createPlanet('mercury', 1.0, texturePath, new BABYLON.Vector3(20, 0, 0));
+		let texturePath = (__dirname + './../textures/Mercury/surface3.jpg');
+		let normalPath = (__dirname + './../textures/Mercury/normal.jpg');
+		this.createPlanet('mercury', 1.0, texturePath, new BABYLON.Vector3(20, 0, 0), normalPath);
 
 	}
 
 	initSaturn(){
 
 		let texturePath = (__dirname + './../textures/Saturn/surface.jpg');
-		this.createPlanet('saturn', 3.0, texturePath, new BABYLON.Vector3(95, 0, 0));
+		let normalPath = (__dirname + './../textures/Saturn/normal.jpg');
+		this.createPlanet('saturn', 3.0, texturePath, new BABYLON.Vector3(95, 0, 0), normalPath);
+
+		let saturnRing = new BABYLON.MeshBuilder.CreateTorus("saturnRing", {thickness: 0.5, tessellation: 64, diameter: 4}, this.scene);
+    	saturnRing.scaling = new BABYLON.Vector3(1, 0.1, 1);
+
+    	let ringMaterial = new BABYLON.StandardMaterial('saturnRingMat', this.scene);
+    	ringMaterial.diffuseTexture = new BABYLON.Texture(__dirname + './../textures/Saturn/ring1.png', this.scene);
+    	ringMaterial.emissiveColor = new BABYLON.Color3(1,1,1);
+
+    	saturnRing.material = ringMaterial;
+    	saturnRing.position = this.planets['saturn'].position;
+
+    	this.scene.registerBeforeRender(()=>{
+
+			saturnRing.rotation.y += 0.01;
+
+		});
 
 	}
 
 	initUranus(){
 
 		let texturePath = (__dirname + './../textures/Uranus/surface.jpg');
-		this.createPlanet('uranus', 2.0, texturePath, new BABYLON.Vector3(110, 0, 0));
+		let normalPath = (__dirname + './../textures/Uranus/normal.jpg');
+		this.createPlanet('uranus', 2.0, texturePath, new BABYLON.Vector3(110, 0, 0), normalPath);
 
 	}
 
 	initNeptune(){
 
 		let texturePath = (__dirname + './../textures/Neptune/surface.jpg');
-		this.createPlanet('neptune', 2.0, texturePath, new BABYLON.Vector3(125, 0, 0));
+		let normalPath = (__dirname + './../textures/Neptune/normal.jpg');
+		this.createPlanet('neptune', 2.0, texturePath, new BABYLON.Vector3(125, 0, 0), normalPath);
 
 	}
 
-	createPlanet(name, size, texturePath, position){
+	createPlanet(name, size, texturePath, position, normal = null, atmosphere = null){
 
 		this.planets[name] = new BABYLON.MeshBuilder.CreateSphere(name, {diameter: size}, this.scene);
 
 		let mat = new BABYLON.StandardMaterial(name+'Material', this.scene);
 		mat.diffuseTexture = new BABYLON.Texture(texturePath, this.scene);
 
+		if (normal) {
+			mat.bumpTexture = new BABYLON.Texture(normal, this.scene);
+			//mat.bumpTexture.level = 100;
+		}
+
+		if (atmosphere) {
+			mat.lightmapTexture = new BABYLON.Texture(atmosphere, this.scene);
+
+			this.scene.registerBeforeRender(()=>{
+
+				this.planets[name].material.lightmapTexture.uOffset -= 0.0001;
+				this.planets[name].material.lightmapTexture.vOffset -= 0.0001;
+
+			});
+
+		}
+
 		mat.emissiveColor = new BABYLON.Vector3(1,1,1);
+		//mat.ambientColor = new BABYLON.Vector3(1,1,1);
+		//mat.diffuseColor = new BABYLON.Color3(1,1,1);
+
+		/*mat.useParallax = true;
+		mat.useParallaxOcclusion = true;
+		mat.parallaxScaleBias = 0.1;
+		mat.specularPower = 1000;
+		mat.specularColor = new BABYLON.Color3(0.2,0.2,0.2);*/
 
 		this.planets[name].material = mat;
 		this.planets[name].position = position;
+		this.planets[name].receiveShadows = true;
 
 		this.planets[name].addLODLevel(500, null);
 
 		//this.planets[name].renderingGroupId = 10;
 
-		this.scene.registerBeforeRender(()=>{
+		/**/this.scene.registerBeforeRender(()=>{
 
-			this.planets[name].rotation.y += 0.01;
+			this.planets[name].rotation.y += 0.001;
 
 		});
 
@@ -301,6 +413,7 @@ class AppController {
 		let moon = new BABYLON.MeshBuilder.CreateSphere(name, {diameter: size}, this.scene);
 		let mat = new BABYLON.StandardMaterial(name+'Material', this.scene);
 		mat.diffuseTexture = new BABYLON.Texture(texturePath, this.scene);
+		mat.bumpTexture = new BABYLON.Texture((__dirname + './../textures/Moon/normal.jpg'), this.scene);
 
 		mat.emissiveColor = new BABYLON.Vector3(1,1,1);
 
@@ -332,7 +445,7 @@ class AppController {
 
 	initKuilperBelt(){
 
-		let asteroid = new BABYLON.MeshBuilder.CreateSphere('asteroidModel', {diameter: 0.1}, this.scene);
+		/*let asteroid = new BABYLON.MeshBuilder.CreateSphere('asteroidModel', {diameter: 0.1}, this.scene);
 		let asteroidMaterial = new BABYLON.StandardMaterial('asteroidMaterial', this.scene);
 		asteroidMaterial.emissiveColor = new BABYLON.Color3(1,1,1);
 		asteroidMaterial.diffuseTexture = new BABYLON.Texture(__dirname + './../textures/Asteroid/surface.jpg', this.scene);
@@ -375,7 +488,24 @@ class AppController {
 		    newInstance.position.z = distance * Math.sin(alpha);
 		    alpha += velocity;
 
-		}
+		}*/
+
+		let belt = new BABYLON.MeshBuilder.CreateTorus("belt", {thickness: 100, tessellation: 64, diameter: 360}, this.scene);
+    	belt.scaling = new BABYLON.Vector3(1, 0.1, 1);
+
+    	let beltMaterial = new BABYLON.StandardMaterial('beltMat', this.scene);
+    	beltMaterial.diffuseTexture = new BABYLON.Texture(__dirname + './../textures/KuiperBelt/belt3.png', this.scene);
+    	beltMaterial.opacityTexture = new BABYLON.Texture(__dirname + './../textures/KuiperBelt/belt3.png', this.scene);
+    	beltMaterial.emissiveColor = new BABYLON.Color3(1,1,1);
+
+    	belt.material = beltMaterial;
+    	belt.position = this.sun.position;
+
+    	this.scene.registerBeforeRender(()=>{
+
+			belt.rotation.y += 0.01;
+
+		});
 
 	}
 
@@ -396,7 +526,7 @@ class AppController {
 
 	createUniverseBox(){
 
-		let universeBox = BABYLON.Mesh.CreateBox("universeBox", 10000.0, this.scene);
+		let universeBox = BABYLON.Mesh.CreateBox("universeBox", 1000.0, this.scene);
 		let universeBoxMaterial = new BABYLON.StandardMaterial("universeBoxMaterial", this.scene);
 		universeBoxMaterial.backFaceCulling = false;
 		universeBoxMaterial.disableLighting = true;
@@ -408,6 +538,54 @@ class AppController {
 		universeBoxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
 
 		//universeBox.renderingGroupId = 0;
+
+	}
+
+	createShadows(){
+
+		/*this.scene.registerBeforeRender(()=>{
+
+			this.sunLight.shadowMinZ -= 0.0001;
+			this.sunLight.shadowMaxZ -= 0.0001;
+
+		});*/
+
+		this.shadowGenerator = new BABYLON.ShadowGenerator(256, this.sunLight);
+
+		this.sun.receiveShadows = false;
+		this.shadowGenerator.transparencyShadow = false;
+		this.shadowGenerator.setDarkness(0.01);
+		//this.shadowGenerator.usePoissonSampling = true;
+		//this.shadowGenerator.useExponentialShadowMap = true;
+		//this.shadowGenerator.useBlurExponentialShadowMap = true;
+		//this.shadowGenerator.useKernelBlur = true;
+		//this.shadowGenerator.blurKernel = 16;
+		this.shadowGenerator.bias = 0.00005;
+
+		this.shadowGenerator.forceBackFacesOnly = true;
+		this.shadowGenerator.frustumEdgeFalloff = 1.0;
+
+		//this.shadowGenerator.bias = 0.001;
+		//this.shadowGenerator.normalBias = 0.02;
+		//this.sunLight.shadowMaxZ = 100;
+		//this.sunLight.shadowMinZ = 10;
+		//this.shadowGenerator.useContactHardeningShadow = true;
+		//this.shadowGenerator.contactHardeningLightSizeUVRatio = 0.05;
+
+		/*let testBox = new BABYLON.MeshBuilder.CreateBox('box', {size: 1}, this.scene);
+		testBox.material = new BABYLON.StandardMaterial('materialbox', this.scene);
+		testBox.material.diffuseColor = new BABYLON.Color3.Red();
+		testBox.material.emissiveColor = new BABYLON.Color3.Red();
+		testBox.position = new BABYLON.Vector3(10,0,0);
+
+		this.shadowGenerator.getShadowMap().renderList.push(testBox);*/
+
+		for(let name in this.planets){
+
+			this.shadowGenerator.getShadowMap().renderList.push(this.planets[name]);
+			//this.shadowGenerator.addShadowCaster(this.planets[name]);
+
+		}
 
 	}
 
