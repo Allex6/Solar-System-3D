@@ -1,7 +1,9 @@
-const {FireMaterial} = require('babylonjs-materials');
+//const {FireMaterial} = require('babylonjs-materials');
 //require('babylonjs-procedural-textures');
 
 //console.log(BABYLON.FireMaterial);
+
+const EventEmitter = require('events');
 
 class AppController {
 
@@ -10,7 +12,40 @@ class AppController {
 		this.canvas = document.getElementById("renderCanvas");
 		this.engine = new BABYLON.Engine(this.canvas, true, { stencil: true });
 
+		this.eventsController = new EventEmitter();
+
 		this.planets = {};
+
+		// The following values have been modified for better viewing, since in the real universe, it would be very difficult to maintain fidelity
+
+		this.SunSize = 20.0; //13.927;
+		this.MercurySize = 0.4; //0.048;
+		this.VenusSize = 1.0; //0.121;
+		this.EarthSize = 1.1; //0.127;
+		this.MoonSize = 0.2; //0.034;
+		this.MarsSize = 0.7; //0.067;
+		this.JupiterSize = 4.5; //1.398;
+		this.SaturnSize = 4.1; //1.164;
+		this.UranusSize = 2.5; //0.507;
+		this.NeptuneSize = 2.1; //0.492;
+
+		this.MercuryDistance = 20;
+		this.VenusDistance = 35;
+		this.EarthDistance = 60;
+		this.MarsDistance = 85;
+		this.JupiterDistance = 140;
+		this.SaturnDistance = 260;
+		this.UranusDistance = 380;
+		this.NeptuneDistance = 620;
+
+		this.MercuryVelocity = 48.92;
+		this.VenusVelocity = 35.02;
+		this.EarthVelocity = 29.78;
+		this.MarsVelocity = 24.07;
+		this.JupiterVelocity = 13.05;
+		this.SaturnVelocity = 9.64;
+		this.UranusVelocity = 6.81;
+		this.NeptuneVelocity = 5.43;
 
 		this.initializeScene();
 		this.initializeStars();
@@ -45,7 +80,7 @@ class AppController {
 		this.devCamera = new BABYLON.FlyCamera("DevCamera", new BABYLON.Vector3(0, 0, -40), this.scene);
 		this.devCamera.attachControl(this.canvas, true);
 
-		this.devCamera.position = new BABYLON.Vector3(0, 120, 0);
+		this.devCamera.position = new BABYLON.Vector3(0, 220, 0);
 		this.devCamera.rotation.x = Math.PI / 2;
 
 		this.devCamera.fov = 0.5;
@@ -68,97 +103,16 @@ class AppController {
 		this.initUranus();
 		this.initNeptune();
 
+		//this.adjustProportion();
+
 		//this.initKuilperBelt();
 
 		this.controlAtmospheres();
 		//this.createShadows();
 
-		/*for(let name in this.planets){
+		this.createOrbits();
 
-			// Rotação dos planetas
-			let alpha = 0;
-			let velocity = 0;
-			let xValue = 0;
-			let zValue = 0;
-
-			switch (name) {
-
-				case 'mercury':
-					alpha = 0;
-					velocity = 0;
-					xValue = 20;
-					zValue = 20;
-					velocity = 0.009;
-					break;
-
-				case 'earth':
-					alpha = 0;
-					velocity = 0;
-					xValue = 50;
-					zValue = 50;
-					velocity = 0.0058;
-					break;
-
-				case 'mars':
-					alpha = 0;
-					velocity = 0;
-					xValue = 65;
-					zValue = 65;
-					velocity = 0.005;
-					break;
-
-				case 'venus':
-					alpha = 0;
-					velocity = 0;
-					xValue = 35;
-					zValue = 35;
-					velocity = 0.007;
-					break;
-
-				case 'jupiter':
-					alpha = 0;
-					velocity = 0;
-					xValue = 80;
-					zValue = 80;
-					velocity = 0.004;
-					break;
-
-				case 'saturn':
-					alpha = 0;
-					velocity = 0;
-					xValue = 95;
-					zValue = 95;
-					velocity = 0.0035;
-					break;
-
-				case 'uranus':
-					alpha = 0;
-					velocity = 0;
-					xValue = 110;
-					zValue = 110;
-					velocity = 0.003;
-					break;
-
-				case 'neptune':
-					alpha = 0;
-					velocity = 0;
-					xValue = 125;
-					zValue = 125;
-					velocity = 0.0025;
-					break;
-
-			}
-			
-		    this.scene.registerBeforeRender(()=>{
-
-		        this.planets[name].position.x = xValue * Math.cos(alpha);
-		        //this.planets[name].position.y = 0;
-		        this.planets[name].position.z = zValue * Math.sin(alpha);
-		        alpha += velocity;
-
-		    });
-
-		}*/
+		this.animateCamera();
 
 	}
 
@@ -174,7 +128,7 @@ class AppController {
 		sunMaterial.linkEmissiveWithDiffuse = true;
 		//sunMaterial.speed = 0.15;
 
-		this.sun = new BABYLON.MeshBuilder.CreateSphere('sun', {diameter: 15}, this.scene);
+		this.sun = new BABYLON.MeshBuilder.CreateSphere('sun', {diameter: this.SunSize}, this.scene);
 
 
 		// Glow Effect
@@ -222,44 +176,15 @@ class AppController {
 		let cloudsTexture = (__dirname + './../textures/Earth/clouds.jpg');
 
 		this.createPlanet(
-			'earth', 2.5, 
-			texturePath, 
-			new BABYLON.Vector3(50, 0, 0),
+			'earth', 
+			this.EarthSize, 
+			texturePath,
+			new BABYLON.Vector3(this.EarthDistance, 0, 0),
 			normalPath,
 			cloudsTexture
 		);
 
-		this.createMoon('moon', 0.5, (__dirname + './../textures/Moon/surface.jpg'), this.planets['earth'], 0.015);
-
-		/*let anim = new BABYLON.Animation("myAnimation", "uOffset", 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
-
-		let keys = [];
-	    //At the animation key 0, the value of scaling is "1"
-	    keys.push({
-	        frame: 0,
-	        value: 1
-	    });
-
-	    //At the animation key 20, the value of scaling is "0.2"
-	    keys.push({
-	        frame: 20,
-	        value: 0.2
-	    });
-
-	    //At the animation key 100, the value of scaling is "1"
-	    keys.push({
-	        frame: 100,
-	        value: 1
-	    });
-
-	    //Adding keys to the animation object
-		anim.setKeys(keys);
-
-		//Then add the animation object to box1
-		this.planets['earth'].material.lightmapTexture.animations.push(anim);
-
-		//Finally, launch animations on box1, from key 0 to key 100 with loop activated
-		this.scene.beginAnimation(this.planets['earth'].material.lightmapTexture, 0, 100, true);*/
+		this.createMoon('moon', this.MoonSize, (__dirname + './../textures/Moon/surface.jpg'), this.planets['earth'], 0.015);
 
 	}
 
@@ -270,9 +195,9 @@ class AppController {
 		let cloudsTexture = (__dirname + './../textures/Earth/clouds.jpg');
 
 		this.createPlanet('mars', 
-			1.5, 
-			texturePath, 
-			new BABYLON.Vector3(65, 0, 0), 
+			this.MarsSize, 
+			texturePath,
+			new BABYLON.Vector3(this.MarsDistance, 0, 0), 
 			normalPath,
 			cloudsTexture
 		);
@@ -286,9 +211,9 @@ class AppController {
 		let atmosphere = (__dirname + './../textures/Venus/atmosphere.jpg');
 
 		this.createPlanet('venus', 
-			2.4, 
-			texturePath, 
-			new BABYLON.Vector3(35, 0, 0),
+			this.VenusSize, 
+			texturePath,
+			new BABYLON.Vector3(this.VenusDistance, 0, 0),
 			normalPath,
 			atmosphere
 		);
@@ -298,7 +223,11 @@ class AppController {
 	initJupiter(){
 		
 		let texturePath = (__dirname + './../textures/Jupiter/surface.jpg');
-		this.createPlanet('jupiter', 3.5, texturePath, new BABYLON.Vector3(80, 0, 0));
+		this.createPlanet('jupiter',
+			this.JupiterSize,
+			texturePath,
+			new BABYLON.Vector3(this.JupiterDistance, 0, 0)
+		);
 
 		for (let i = 0; i <= 10; i++) {
 
@@ -314,7 +243,12 @@ class AppController {
 
 		let texturePath = (__dirname + './../textures/Mercury/surface3.jpg');
 		let normalPath = (__dirname + './../textures/Mercury/normal.jpg');
-		this.createPlanet('mercury', 1.0, texturePath, new BABYLON.Vector3(20, 0, 0), normalPath);
+		this.createPlanet('mercury', 
+			this.MercurySize, 
+			texturePath,
+			new BABYLON.Vector3(this.MercuryDistance, 0, 0), 
+			normalPath
+		);
 
 	}
 
@@ -322,9 +256,14 @@ class AppController {
 
 		let texturePath = (__dirname + './../textures/Saturn/surface.jpg');
 		let normalPath = (__dirname + './../textures/Saturn/normal.jpg');
-		this.createPlanet('saturn', 3.0, texturePath, new BABYLON.Vector3(95, 0, 0), normalPath);
+		this.createPlanet('saturn',
+			this.SaturnSize,
+			texturePath,
+			new BABYLON.Vector3(this.SaturnDistance, 0, 0),
+			normalPath
+		);
 
-		let saturnRing = new BABYLON.MeshBuilder.CreateTorus("saturnRing", {thickness: 0.5, tessellation: 64, diameter: 4}, this.scene);
+		let saturnRing = new BABYLON.MeshBuilder.CreateTorus("saturnRing", {thickness: 0.9, tessellation: 96, diameter: 6}, this.scene);
     	saturnRing.scaling = new BABYLON.Vector3(1, 0.1, 1);
 
     	let ringMaterial = new BABYLON.StandardMaterial('saturnRingMat', this.scene);
@@ -346,7 +285,12 @@ class AppController {
 
 		let texturePath = (__dirname + './../textures/Uranus/surface.jpg');
 		let normalPath = (__dirname + './../textures/Uranus/normal.jpg');
-		this.createPlanet('uranus', 2.0, texturePath, new BABYLON.Vector3(110, 0, 0), normalPath);
+		this.createPlanet('uranus',
+			this.UranusSize,
+			texturePath,
+			new BABYLON.Vector3(this.UranusDistance, 0, 0),
+			normalPath
+		);
 
 	}
 
@@ -354,7 +298,12 @@ class AppController {
 
 		let texturePath = (__dirname + './../textures/Neptune/surface.jpg');
 		let normalPath = (__dirname + './../textures/Neptune/normal.jpg');
-		this.createPlanet('neptune', 2.0, texturePath, new BABYLON.Vector3(125, 0, 0), normalPath);
+		this.createPlanet('neptune',
+			this.NeptuneSize,
+			texturePath,
+			new BABYLON.Vector3(this.NeptuneDistance, 0, 0),
+			normalPath
+		);
 
 	}
 
@@ -396,7 +345,7 @@ class AppController {
 		this.planets[name].position = position;
 		this.planets[name].receiveShadows = true;
 
-		this.planets[name].addLODLevel(500, null);
+		this.planets[name].addLODLevel(1200, null);
 
 		//this.planets[name].renderingGroupId = 10;
 
@@ -526,7 +475,7 @@ class AppController {
 
 	createUniverseBox(){
 
-		let universeBox = BABYLON.Mesh.CreateBox("universeBox", 1000.0, this.scene);
+		let universeBox = new BABYLON.MeshBuilder.CreateBox("universeBox", {size: 15000.0}, this.scene);
 		let universeBoxMaterial = new BABYLON.StandardMaterial("universeBoxMaterial", this.scene);
 		universeBoxMaterial.backFaceCulling = false;
 		universeBoxMaterial.disableLighting = true;
@@ -586,6 +535,257 @@ class AppController {
 			//this.shadowGenerator.addShadowCaster(this.planets[name]);
 
 		}
+
+	}
+
+	adjustProportion(){
+
+		/*
+			100 mil KM = 1 Unidade
+
+			// O diâmetro deve ser aumentado para melhor visualização
+
+			Sol = 13.927
+			Terra = 0.127
+			Lua = 0.034
+			Mercúrio = 0.048
+			Vênus = 0.121
+			Marte = 0.067
+			Júpiter = 1.398
+			Saturno = 1.164
+			Uranu = 0.507
+			Netuno = 0.492
+	
+			// A distância deve ser diminuída para melhor visualização
+	
+			mercúrio => sol
+			579.1
+
+			venus => sol
+			1082
+
+			terra => sol
+			1496
+
+			terra => lua
+			3.844
+
+			marte => sol
+			2279.4
+
+			jupiter => sol
+			7783.3
+
+			saturno => sol
+			14294
+
+			urano => sol
+			28709.9
+
+			netuno => sol
+			45043
+
+			Plutão => sol
+			59135.2
+
+
+		*/
+
+	}
+
+	createOrbits(){
+
+		this.eventsController.once('presentation-ended', ()=>{
+
+			this.devCamera.rotation.x = (Math.PI / 2);
+			//this.devCamera.rotation.y = Math.PI / 2;
+			this.devCamera.position = new BABYLON.Vector3(0, 220, 0);
+
+			for(let name in this.planets){
+
+				let alpha = 0;
+				let velocity = 0;
+				let xValue = 0;
+				let zValue = 0;
+
+				switch (name) {
+
+					case 'mercury':
+						alpha = 0;
+						velocity = 0;
+						xValue = this.MercuryDistance;
+						zValue = this.MercuryDistance;
+						velocity = (this.MercuryVelocity / 10000) * -1;
+						break;
+
+					case 'venus':
+						alpha = 0;
+						velocity = 0;
+						xValue = this.VenusDistance;
+						zValue = this.VenusDistance;
+						velocity = (this.VenusVelocity / 10000) * -1;
+						break;
+
+					case 'earth':
+						alpha = 0;
+						velocity = 0;
+						xValue = this.EarthDistance;
+						zValue = this.EarthDistance;
+						velocity = (this.EarthVelocity / 10000) * -1;
+						break;
+
+					case 'mars':
+						alpha = 0;
+						velocity = 0;
+						xValue = this.MarsDistance;
+						zValue = this.MarsDistance;
+						velocity = (this.MarsVelocity / 10000) * -1;
+						break;
+
+					case 'jupiter':
+						alpha = 0;
+						velocity = 0;
+						xValue = this.JupiterDistance;
+						zValue = this.JupiterDistance;
+						velocity = (this.JupiterVelocity / 10000) * -1;
+						break;
+
+					case 'saturn':
+						alpha = 0;
+						velocity = 0;
+						xValue = this.SaturnDistance;
+						zValue = this.SaturnDistance;
+						velocity = (this.SaturnVelocity / 10000) * -1;
+						break;
+
+					case 'uranus':
+						alpha = 0;
+						velocity = 0;
+						xValue = this.UranusDistance;
+						zValue = this.UranusDistance;
+						velocity = (this.UranusVelocity / 10000) * -1;
+						break;
+
+					case 'neptune':
+						alpha = 0;
+						velocity = 0;
+						xValue = this.NeptuneDistance;
+						zValue = this.NeptuneDistance;
+						velocity = (this.NeptuneVelocity / 10000) * -1;
+						break;
+
+				}
+				
+			    this.scene.registerBeforeRender(()=>{
+
+			        this.planets[name].position.x = xValue * Math.cos(alpha);
+			        //this.planets[name].position.y = 0;
+			        this.planets[name].position.z = zValue * Math.sin(alpha);
+			        alpha += velocity;
+
+			    });
+
+			}
+
+		});
+
+	}
+
+	animateCamera(){
+
+		this.devCamera.rotation.x = (Math.PI * 2);
+		this.devCamera.rotation.y = Math.PI / 2;
+
+		let velocity = 0.5;
+
+		this.scene.registerBeforeRender(()=>{
+
+			if (this.devCamera.position.y > 2.0) {
+
+				this.devCamera.position.y -= velocity;
+				
+			} else {
+
+				velocity = 2.5;
+
+			}
+
+			if (this.devCamera.position.y <= 2.5) {
+
+				if (this.devCamera.position.x <= (this.MercuryDistance - 2) && this.devCamera.position.x >= (this.MercuryDistance - 5)) {
+
+					velocity = 0.006;
+					this.devCamera.position.z += 0.06;
+					this.devCamera.setTarget(this.planets['mercury'].position);
+
+
+				} else if (this.devCamera.position.x <= (this.VenusDistance - 2) && this.devCamera.position.x >= (this.VenusDistance - 5)) {
+					
+					velocity = 0.006;
+					this.devCamera.position.z += 0.1;
+					this.devCamera.setTarget(this.planets['venus'].position);
+
+
+				} else if (this.devCamera.position.x <= (this.EarthDistance - 2) && this.devCamera.position.x >= (this.EarthDistance - 5)) {
+					
+					velocity = 0.006;
+					this.devCamera.position.z += 0.13;
+					this.devCamera.setTarget(this.planets['earth'].position);
+
+
+				} else if (this.devCamera.position.x <= (this.MarsDistance - 2) && this.devCamera.position.x >= (this.MarsDistance - 5)) {
+					
+					velocity = 0.006;
+					this.devCamera.position.z += 0.14;
+					this.devCamera.setTarget(this.planets['mars'].position);
+
+
+				} else if (this.devCamera.position.x <= (this.JupiterDistance - 2) && this.devCamera.position.x >= (this.JupiterDistance - 5)) {
+					
+					velocity = 0.006;
+					this.devCamera.position.z += 0.27;
+					this.devCamera.setTarget(this.planets['jupiter'].position);
+
+
+				} else if (this.devCamera.position.x <= (this.SaturnDistance - 2) && this.devCamera.position.x >= (this.SaturnDistance - 5)) {
+					
+					velocity = 0.006;
+					this.devCamera.position.z += 0.5;
+					this.devCamera.setTarget(this.planets['saturn'].position);
+
+
+				} else if (this.devCamera.position.x <= (this.UranusDistance - 2) && this.devCamera.position.x >= (this.UranusDistance - 5)) {
+					
+					velocity = 0.006;
+					this.devCamera.position.z += 0.5;
+					this.devCamera.setTarget(this.planets['uranus'].position);
+
+
+				} else if (this.devCamera.position.x <= (this.NeptuneDistance - 2) && this.devCamera.position.x >= (this.NeptuneDistance - 5)) {
+					
+					velocity = 0.006;
+					this.devCamera.position.z += 0.75;
+					this.devCamera.setTarget(this.planets['neptune'].position);
+
+
+				} else {
+
+					this.devCamera.rotation.x = (Math.PI * 2);
+					this.devCamera.rotation.y = Math.PI / 2;
+					this.devCamera.position.z = 2.5;
+
+				}
+
+				if (this.devCamera.position.x >= this.NeptuneDistance) {
+					velocity = 0;
+					this.eventsController.emit('presentation-ended');
+				}
+
+				this.devCamera.position.x += velocity;
+
+			}
+
+		});
 
 	}
 
