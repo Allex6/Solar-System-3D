@@ -87,6 +87,12 @@ class AppController {
 
 		this.scene.clearColor = new BABYLON.Color3(0,0,0).toLinearSpace();
 
+		this.ambientSound = new BABYLON.Sound('ambientSound', __dirname + './../sound-effects/space-ambient.mp3', this.scene, null, {
+			autoplay: true,
+			loop: true,
+			volume: 0.5
+		});
+
 	}
 
 	initializeStars(){
@@ -706,7 +712,7 @@ class AppController {
 				
 			} else {
 
-				velocity = 2.5;
+				velocity = 0.15;
 
 			}
 
