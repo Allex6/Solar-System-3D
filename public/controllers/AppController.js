@@ -4,6 +4,7 @@
 //console.log(BABYLON.FireMaterial);
 
 const EventEmitter = require('events');
+const BABYLON_GUI = require('babylonjs-gui');
 
 class AppController {
 
@@ -15,6 +16,7 @@ class AppController {
 		this.eventsController = new EventEmitter();
 
 		this.planets = {};
+		this.planetsGUIs = [];
 
 		// The following values have been modified for better viewing, since in the real universe, it would be very difficult to maintain fidelity
 
@@ -48,7 +50,14 @@ class AppController {
 		this.NeptuneVelocity = 5.43;
 
 		this.initializeScene();
-		this.initializeStars();
+		this.initializeStars().then(()=>{
+
+			this.initGUI().then(()=>{
+				this.controlPlanetsGUI();
+				//this.animateCamera();
+			});
+
+		});
 
 		this.engine.runRenderLoop(()=>{
 
@@ -87,6 +96,8 @@ class AppController {
 
 		this.scene.clearColor = new BABYLON.Color3(0,0,0).toLinearSpace();
 
+		this.createUniverseBox();
+
 		this.ambientSound = new BABYLON.Sound('ambientSound', __dirname + './../sound-effects/space-ambient.mp3', this.scene, null, {
 			autoplay: true,
 			loop: true,
@@ -97,29 +108,31 @@ class AppController {
 
 	initializeStars(){
 
-		this.createUniverseBox();
+		return new Promise((resolve, reject)=>{
 
-		this.controlAtmospheres();
+			this.controlAtmospheres();
 
-		this.initSun();
-		this.initMercury();
-		this.initVenus();
-		this.initEarth();
-		this.initMars();
-		this.initJupiter();
-		this.initSaturn();
-		this.initUranus();
-		this.initNeptune();
+			this.initSun();
+			this.initMercury();
+			this.initVenus();
+			this.initEarth();
+			this.initMars();
+			this.initJupiter();
+			this.initSaturn();
+			this.initUranus();
+			this.initNeptune();
 
-		//this.adjustProportion();
+			//this.adjustProportion();
 
-		//this.initKuilperBelt();
+			//this.initKuilperBelt();
 
-		//this.createShadows();
+			//this.createShadows();
 
-		this.createOrbits();
+			this.createOrbits();
 
-		//this.animateCamera();
+			resolve();
+
+		});
 
 	}
 
@@ -191,12 +204,14 @@ class AppController {
 			cloudsTexture,
 			1,
 			new BABYLON.Color3(0, 0.5, 0.6)
-		);
+		).then(()=>{
 
-		this.createMoon('moon', this.MoonSize, (__dirname + './../textures/Moon/surface.jpg'), this.planets['earth'], 0.015);
+			this.createMoon('moon', this.MoonSize, (__dirname + './../textures/Moon/surface.jpg'), this.planets['earth'], 0.015);
 
-		this.planets['earth'].material.lightmapTexture.uAng = Math.PI;
-		this.planets['earth'].material.lightmapTexture.invertZ = true;
+			this.planets['earth'].material.lightmapTexture.uAng = Math.PI;
+			this.planets['earth'].material.lightmapTexture.invertZ = true;
+
+		});
 
 	}
 
@@ -214,37 +229,37 @@ class AppController {
 			cloudsTexture,
 			0.3,
 			new BABYLON.Color3(0.7, 0.5, 0)
-		);
+		).then(()=>{
 
-		// The following values have been modified for better viewing, since in the real universe, it would be very difficult to maintain fidelity. 
+			// The following values have been modified for better viewing, since in the real universe, it would be very difficult to maintain fidelity. 
 
-		let marsMoons = [
+			let marsMoons = [
 
-			{
-				name: 'Phobos',
-				size: 0.05, //22533 km
-				texture: (__dirname + './../textures/Mars/moons/Phobos/surface.jpg'),
-				normal: (__dirname + './../textures/Mars/moons/Phobos/normal.png'),
-				velocity: (7696.7 / 10000),
-				distance:  1 //9376 km
-			},
-			{
-				name: 'Deimos',
-				size: 0.028, //12.4 km
-				texture: (__dirname + './../textures/Mars/moons/Deimos/surface.jpg'),
-				normal: (__dirname + './../textures/Mars/moons/Deimos/normal.png'),
-				velocity: (4864.8 / 10000),
-				distance:  5 //23460 km
-			}
+				{
+					name: 'Phobos',
+					size: 0.05, //22533 km
+					texture: (__dirname + './../textures/Mars/moons/Phobos/surface.jpg'),
+					normal: (__dirname + './../textures/Mars/moons/Phobos/normal.png'),
+					velocity: (7696.7 / 10000),
+					distance:  1 //9376 km
+				},
+				{
+					name: 'Deimos',
+					size: 0.028, //12.4 km
+					texture: (__dirname + './../textures/Mars/moons/Deimos/surface.jpg'),
+					normal: (__dirname + './../textures/Mars/moons/Deimos/normal.png'),
+					velocity: (4864.8 / 10000),
+					distance:  5 //23460 km
+				}
 
 
-		];
+			];
 
-		//name, size, texturePath, parent, velocity, distanceFromPlanet 3.5
+			marsMoons.forEach(moon=>{
 
-		marsMoons.forEach(moon=>{
+				this.createMoon(moon.name, moon.size, moon.texture, this.planets['mars'], moon.velocity/10000, moon.distance);
 
-			this.createMoon(moon.name, moon.size, moon.texture, this.planets['mars'], moon.velocity/10000, moon.distance);
+			});
 
 		});
 
@@ -264,10 +279,10 @@ class AppController {
 			atmosphere,
 			0.6,
 			new BABYLON.Color3(0.8, 0.6, 0)
-		);
-
-		this.planets['venus'].material.lightmapTexture.uAng = Math.PI;
-		this.planets['venus'].material.lightmapTexture.invertZ = true;
+		).then(()=>{
+			this.planets['venus'].material.lightmapTexture.uAng = Math.PI;
+			this.planets['venus'].material.lightmapTexture.invertZ = true;
+		});
 
 	}
 
@@ -278,131 +293,133 @@ class AppController {
 			this.JupiterSize,
 			texturePath,
 			new BABYLON.Vector3(this.JupiterDistance, 0, 0)
-		);
+		).then(()=>{
+			
+			// The following values have been modified for better viewing, since in the real universe, it would be very difficult to maintain fidelity. 
 
-		// The following values have been modified for better viewing, since in the real universe, it would be very difficult to maintain fidelity. 
+			let jupiterMoons = [
 
-		let jupiterMoons = [
-
-			{
-				name: 'Io',
-				size: 0.21,
-				texture: (__dirname + './../textures/Jupiter/moons/Io/surface.jpg'),
-				normal: (__dirname + './../textures/Jupiter/moons/Io/normal.png'),
-				velocity: (62424 / 10000),
-				distance:  5
-			},
-			{
-				name: 'Europa',
-				size: 0.18, //3.121,6 km
-				texture: (__dirname + './../textures/Jupiter/moons/Europa/surface.jpg'),
-				normal: (__dirname + './../textures/Jupiter/moons/Europa/normal.png'),
-				velocity: (49464 / 10000),
-				distance:  7
-			},
-			{
-				name: 'Ganimedes',
-				size: 0.31, //5262 km
-				texture: (__dirname + './../textures/Jupiter/moons/Ganimedes/surface.jpg'),
-				normal: (__dirname + './../textures/Jupiter/moons/Ganimedes/normal.png'),
-				velocity: (39165.6 / 10000),
-				distance:  10
-			},
-			{
-				name: 'Callisto',
-				size: 0.28, //4821 km
-				texture: (__dirname + './../textures/Jupiter/moons/Callisto/surface.jpg'),
-				normal: (__dirname + './../textures/Jupiter/moons/Callisto/normal.png'),
-				velocity: (29534.4 / 10000),
-				distance:  12
-			},
-			{
-				name: 'Amalthea',
-				size: 0.001, //167 km
-				texture: (__dirname + './../textures/Jupiter/moons/Amalthea/surface.jpg'),
-				normal: (__dirname + './../textures/Jupiter/moons/Amalthea/normal.png'),
-				velocity: (95652 / 10000),
-				distance:  14
-			},
-			{
-				name: 'Himalia',
-				size: 0.0011, //170 km
-				texture: (__dirname + './../textures/Jupiter/moons/Himalia/surface.jpg'),
-				normal: (__dirname + './../textures/Jupiter/moons/Himalia/normal.png'),
-				velocity: (11895.90 / 10000),
-				distance:  16
-			},
-			{
-				name: 'Elara',
-				size: 0.00056, //86 km
-				texture: (__dirname + './../textures/Jupiter/moons/Elara/surface.jpg'),
-				normal: (__dirname + './../textures/Jupiter/moons/Elara/normal.png'),
-				velocity: (11697.5 / 10000),
-				distance:  18
-			},
-			{
-				name: 'Pasiphae',
-				size: 0.00052, //86 km
-				texture: (__dirname + './../textures/Jupiter/moons/Pasiphae/surface.jpg'),
-				normal: (__dirname + './../textures/Jupiter/moons/Pasiphae/normal.png'),
-				velocity: (7957.40 / 10000),
-				distance:  21
-			},
-			{
-				name: 'Lysithea',
-				size: 0.00021, //36 km
-				texture: (__dirname + './../textures/Jupiter/moons/Lysithea/surface.jpg'),
-				normal: (__dirname + './../textures/Jupiter/moons/Lysithea/normal.png'),
-				velocity: (11844 / 10000),
-				distance:  26
-			},
-			{
-				name: 'Carme',
-				size: 0.00030, //46 km
-				texture: (__dirname + './../textures/Jupiter/moons/Carme/surface.jpg'),
-				normal: (__dirname + './../textures/Jupiter/moons/Carme/normal.png'),
-				velocity: (8110.8 / 10000),
-				distance:  28
-			},
-			{
-				name: 'Ananke',
-				size: 0.00019, //28 km
-				texture: (__dirname + './../textures/Jupiter/moons/Ananke/surface.jpg'),
-				normal: (__dirname + './../textures/Jupiter/moons/Ananke/normal.png'),
-				velocity: (8712.00 / 10000),
-				distance:  30
-			},
-			{
-				name: 'Leda',
-				size: 0.00015, //16 km
-				texture: (__dirname + './../textures/Jupiter/moons/Leda/surface.png'),
-				normal: (__dirname + './../textures/Jupiter/moons/Leda/normal.png'),
-				velocity: (43.2 / 10000),
-				distance:  33
-			},
-			{
-				name: 'Thebe',
-				size: 0.00060, //96.8 km
-				texture: (__dirname + './../textures/Jupiter/moons/Thebe/surface.jpg'),
-				normal: (__dirname + './../textures/Jupiter/moons/Thebe/normal.png'),
-				velocity: (86112 / 10000),
-				distance:  35
-			},
-			{
-				name: 'Adrastea',
-				size: 0.000152, //16.4 km
-				texture: (__dirname + './../textures/Jupiter/moons/Adrastea/surface.png'),
-				normal: (__dirname + './../textures/Jupiter/moons/Adrastea/normal.png'),
-				velocity: (112960.8 / 10000),
-				distance:  37
-			}
+				{
+					name: 'Io',
+					size: 0.21,
+					texture: (__dirname + './../textures/Jupiter/moons/Io/surface.jpg'),
+					normal: (__dirname + './../textures/Jupiter/moons/Io/normal.png'),
+					velocity: (62424 / 10000),
+					distance:  5
+				},
+				{
+					name: 'Europa',
+					size: 0.18, //3.121,6 km
+					texture: (__dirname + './../textures/Jupiter/moons/Europa/surface.jpg'),
+					normal: (__dirname + './../textures/Jupiter/moons/Europa/normal.png'),
+					velocity: (49464 / 10000),
+					distance:  7
+				},
+				{
+					name: 'Ganimedes',
+					size: 0.31, //5262 km
+					texture: (__dirname + './../textures/Jupiter/moons/Ganimedes/surface.jpg'),
+					normal: (__dirname + './../textures/Jupiter/moons/Ganimedes/normal.png'),
+					velocity: (39165.6 / 10000),
+					distance:  10
+				},
+				{
+					name: 'Callisto',
+					size: 0.28, //4821 km
+					texture: (__dirname + './../textures/Jupiter/moons/Callisto/surface.jpg'),
+					normal: (__dirname + './../textures/Jupiter/moons/Callisto/normal.png'),
+					velocity: (29534.4 / 10000),
+					distance:  12
+				},
+				{
+					name: 'Amalthea',
+					size: 0.001, //167 km
+					texture: (__dirname + './../textures/Jupiter/moons/Amalthea/surface.jpg'),
+					normal: (__dirname + './../textures/Jupiter/moons/Amalthea/normal.png'),
+					velocity: (95652 / 10000),
+					distance:  14
+				},
+				{
+					name: 'Himalia',
+					size: 0.0011, //170 km
+					texture: (__dirname + './../textures/Jupiter/moons/Himalia/surface.jpg'),
+					normal: (__dirname + './../textures/Jupiter/moons/Himalia/normal.png'),
+					velocity: (11895.90 / 10000),
+					distance:  16
+				},
+				{
+					name: 'Elara',
+					size: 0.00056, //86 km
+					texture: (__dirname + './../textures/Jupiter/moons/Elara/surface.jpg'),
+					normal: (__dirname + './../textures/Jupiter/moons/Elara/normal.png'),
+					velocity: (11697.5 / 10000),
+					distance:  18
+				},
+				{
+					name: 'Pasiphae',
+					size: 0.00052, //86 km
+					texture: (__dirname + './../textures/Jupiter/moons/Pasiphae/surface.jpg'),
+					normal: (__dirname + './../textures/Jupiter/moons/Pasiphae/normal.png'),
+					velocity: (7957.40 / 10000),
+					distance:  21
+				},
+				{
+					name: 'Lysithea',
+					size: 0.00021, //36 km
+					texture: (__dirname + './../textures/Jupiter/moons/Lysithea/surface.jpg'),
+					normal: (__dirname + './../textures/Jupiter/moons/Lysithea/normal.png'),
+					velocity: (11844 / 10000),
+					distance:  26
+				},
+				{
+					name: 'Carme',
+					size: 0.00030, //46 km
+					texture: (__dirname + './../textures/Jupiter/moons/Carme/surface.jpg'),
+					normal: (__dirname + './../textures/Jupiter/moons/Carme/normal.png'),
+					velocity: (8110.8 / 10000),
+					distance:  28
+				},
+				{
+					name: 'Ananke',
+					size: 0.00019, //28 km
+					texture: (__dirname + './../textures/Jupiter/moons/Ananke/surface.jpg'),
+					normal: (__dirname + './../textures/Jupiter/moons/Ananke/normal.png'),
+					velocity: (8712.00 / 10000),
+					distance:  30
+				},
+				{
+					name: 'Leda',
+					size: 0.00015, //16 km
+					texture: (__dirname + './../textures/Jupiter/moons/Leda/surface.png'),
+					normal: (__dirname + './../textures/Jupiter/moons/Leda/normal.png'),
+					velocity: (43.2 / 10000),
+					distance:  33
+				},
+				{
+					name: 'Thebe',
+					size: 0.00060, //96.8 km
+					texture: (__dirname + './../textures/Jupiter/moons/Thebe/surface.jpg'),
+					normal: (__dirname + './../textures/Jupiter/moons/Thebe/normal.png'),
+					velocity: (86112 / 10000),
+					distance:  35
+				},
+				{
+					name: 'Adrastea',
+					size: 0.000152, //16.4 km
+					texture: (__dirname + './../textures/Jupiter/moons/Adrastea/surface.png'),
+					normal: (__dirname + './../textures/Jupiter/moons/Adrastea/normal.png'),
+					velocity: (112960.8 / 10000),
+					distance:  37
+				}
 
 
-		];
+			];
 
-		jupiterMoons.forEach(moon=>{
+			jupiterMoons.forEach(moon=>{
 
-			this.createMoon(moon.name, moon.size, moon.texture, this.planets['jupiter'], moon.velocity/10000, moon.distance);
+				this.createMoon(moon.name, moon.size, moon.texture, this.planets['jupiter'], moon.velocity/10000, moon.distance);
+
+			});
 
 		});
 
@@ -429,93 +446,93 @@ class AppController {
 			this.SaturnSize,
 			texturePath,
 			new BABYLON.Vector3(this.SaturnDistance, 0, 0)
-		);
+		).then(()=>{
+			
+			let saturnRing = new BABYLON.MeshBuilder.CreateTorus("saturnRing", {thickness: 0.9, tessellation: 96, diameter: 6}, this.scene);
+	    	saturnRing.scaling = new BABYLON.Vector3(1, 0.1, 1);
 
-		let saturnRing = new BABYLON.MeshBuilder.CreateTorus("saturnRing", {thickness: 0.9, tessellation: 96, diameter: 6}, this.scene);
-    	saturnRing.scaling = new BABYLON.Vector3(1, 0.1, 1);
+	    	let ringMaterial = new BABYLON.StandardMaterial('saturnRingMat', this.scene);
+	    	ringMaterial.diffuseTexture = new BABYLON.Texture(__dirname + './../textures/Saturn/ring1.png', this.scene);
+	    	ringMaterial.emissiveColor = new BABYLON.Color3(1,1,1);
 
-    	let ringMaterial = new BABYLON.StandardMaterial('saturnRingMat', this.scene);
-    	ringMaterial.diffuseTexture = new BABYLON.Texture(__dirname + './../textures/Saturn/ring1.png', this.scene);
-    	ringMaterial.emissiveColor = new BABYLON.Color3(1,1,1);
+	    	saturnRing.material = ringMaterial;
+	    	saturnRing.position = this.planets['saturn'].position;
 
-    	saturnRing.material = ringMaterial;
-    	saturnRing.position = this.planets['saturn'].position;
+	    	this.scene.registerBeforeRender(()=>{
 
-    	this.scene.registerBeforeRender(()=>{
+				saturnRing.rotation.y += 0.01;
 
-			saturnRing.rotation.y += 0.01;
+			});
 
-		});
+			// The following values have been modified for better viewing, since in the real universe, it would be very difficult to maintain fidelity. 
 
-		// The following values have been modified for better viewing, since in the real universe, it would be very difficult to maintain fidelity. 
+			let saturnMoons = [
 
-		let saturnMoons = [
-
-			{
-				name: 'Mimas',
-				size: 0.025, //396.4 km
-				texture: (__dirname + './../textures/Saturn/moons/Mimas/surface.jpg'),
-				normal: (__dirname + './../textures/Saturn/moons/Mimas/normal.png'),
-				velocity: (51552 / 10000),
-				distance:  5 //1221 km
-			},
-			{
-				name: 'Enceladus',
-				size: 0.028, //396.4 km
-				texture: (__dirname + './../textures/Saturn/moons/Enceladus/surface.jpg'),
-				normal: (__dirname + './../textures/Saturn/moons/Enceladus/normal.png'),
-				velocity: (45487.3 / 10000),
-				distance:  7 //1221 km
-			},
-			{
-				name: 'Thetys',
-				size: 0.092, //1062 km
-				texture: (__dirname + './../textures/Saturn/moons/Thetys/surface.jpg'),
-				normal: (__dirname + './../textures/Saturn/moons/Thetys/normal.png'),
-				velocity: (40086.3 / 10000),
-				distance:  10 //1221 km
-			},
-			{
-				name: 'Dione',
-				size: 0.095, //1122,8 km
-				texture: (__dirname + './../textures/Saturn/moons/Dione/surface.jpg'),
-				normal: (__dirname + './../textures/Saturn/moons/Dione/normal.png'),
-				velocity: (36100.4 / 10000),
-				distance:  12 //1221 km
-			},
-			{
-				name: 'Rhea',
-				size: 0.11, //1.527,6 km
-				texture: (__dirname + './../textures/Saturn/moons/Rhea/surface.jpg'),
-				normal: (__dirname + './../textures/Saturn/moons/Rhea/normal.png'),
-				velocity: (30541.4 / 10000),
-				distance:  13 //1221 km
-			},
-			{
-				name: 'Titan',
-				size: 0.305, //5149.5 km
-				texture: (__dirname + './../textures/Saturn/moons/Titan/surface.jpg'),
-				normal: (__dirname + './../textures/Saturn/moons/Titan/normal.png'),
-				velocity: (20051.2 / 10000),
-				distance:  17 //1221 km
-			},
-			{
-				name: 'Iapetus',
-				size: 0.105, //1.469 km
-				texture: (__dirname + './../textures/Saturn/moons/Iapetus/surface.jpg'),
-				normal: (__dirname + './../textures/Saturn/moons/Iapetus/normal.png'),
-				velocity: (11748.8 / 10000),
-				distance:  19 //1221 km
-			}
+				{
+					name: 'Mimas',
+					size: 0.025, //396.4 km
+					texture: (__dirname + './../textures/Saturn/moons/Mimas/surface.jpg'),
+					normal: (__dirname + './../textures/Saturn/moons/Mimas/normal.png'),
+					velocity: (51552 / 10000),
+					distance:  5 //1221 km
+				},
+				{
+					name: 'Enceladus',
+					size: 0.028, //396.4 km
+					texture: (__dirname + './../textures/Saturn/moons/Enceladus/surface.jpg'),
+					normal: (__dirname + './../textures/Saturn/moons/Enceladus/normal.png'),
+					velocity: (45487.3 / 10000),
+					distance:  7 //1221 km
+				},
+				{
+					name: 'Thetys',
+					size: 0.092, //1062 km
+					texture: (__dirname + './../textures/Saturn/moons/Thetys/surface.jpg'),
+					normal: (__dirname + './../textures/Saturn/moons/Thetys/normal.png'),
+					velocity: (40086.3 / 10000),
+					distance:  10 //1221 km
+				},
+				{
+					name: 'Dione',
+					size: 0.095, //1122,8 km
+					texture: (__dirname + './../textures/Saturn/moons/Dione/surface.jpg'),
+					normal: (__dirname + './../textures/Saturn/moons/Dione/normal.png'),
+					velocity: (36100.4 / 10000),
+					distance:  12 //1221 km
+				},
+				{
+					name: 'Rhea',
+					size: 0.11, //1.527,6 km
+					texture: (__dirname + './../textures/Saturn/moons/Rhea/surface.jpg'),
+					normal: (__dirname + './../textures/Saturn/moons/Rhea/normal.png'),
+					velocity: (30541.4 / 10000),
+					distance:  13 //1221 km
+				},
+				{
+					name: 'Titan',
+					size: 0.305, //5149.5 km
+					texture: (__dirname + './../textures/Saturn/moons/Titan/surface.jpg'),
+					normal: (__dirname + './../textures/Saturn/moons/Titan/normal.png'),
+					velocity: (20051.2 / 10000),
+					distance:  17 //1221 km
+				},
+				{
+					name: 'Iapetus',
+					size: 0.105, //1.469 km
+					texture: (__dirname + './../textures/Saturn/moons/Iapetus/surface.jpg'),
+					normal: (__dirname + './../textures/Saturn/moons/Iapetus/normal.png'),
+					velocity: (11748.8 / 10000),
+					distance:  19 //1221 km
+				}
 
 
-		];
+			];
 
-		//name, size, texturePath, parent, velocity, distanceFromPlanet 3.5
+			saturnMoons.forEach(moon=>{
 
-		saturnMoons.forEach(moon=>{
+				this.createMoon(moon.name, moon.size, moon.texture, this.planets['saturn'], moon.velocity/10000, moon.distance);
 
-			this.createMoon(moon.name, moon.size, moon.texture, this.planets['saturn'], moon.velocity/10000, moon.distance);
+			});
 
 		});
 
@@ -530,74 +547,74 @@ class AppController {
 			texturePath,
 			new BABYLON.Vector3(this.UranusDistance, 0, 0),
 			normalPath
-		);
+		).then(()=>{
+			
+			let uranusRing = new BABYLON.MeshBuilder.CreateTorus("uranusRing", {thickness: 0.2, tessellation: 96, diameter: 4}, this.scene);
+	    	uranusRing.scaling = new BABYLON.Vector3(1, 0.1, 1);
 
-		let uranusRing = new BABYLON.MeshBuilder.CreateTorus("uranusRing", {thickness: 0.2, tessellation: 96, diameter: 4}, this.scene);
-    	uranusRing.scaling = new BABYLON.Vector3(1, 0.1, 1);
+	    	let ringMaterial = new BABYLON.StandardMaterial('uranusRingMat', this.scene);
+	    	ringMaterial.diffuseTexture = new BABYLON.Texture(__dirname + './../textures/Uranus/ring.png', this.scene);
+	    	ringMaterial.emissiveColor = new BABYLON.Color3(1,1,1);
 
-    	let ringMaterial = new BABYLON.StandardMaterial('uranusRingMat', this.scene);
-    	ringMaterial.diffuseTexture = new BABYLON.Texture(__dirname + './../textures/Uranus/ring.png', this.scene);
-    	ringMaterial.emissiveColor = new BABYLON.Color3(1,1,1);
+	    	uranusRing.material = ringMaterial;
+	    	uranusRing.position = this.planets['uranus'].position;
 
-    	uranusRing.material = ringMaterial;
-    	uranusRing.position = this.planets['uranus'].position;
+	    	this.scene.registerBeforeRender(()=>{
 
-    	this.scene.registerBeforeRender(()=>{
+				uranusRing.rotation.y += 0.01;
 
-			uranusRing.rotation.y += 0.01;
+			});
 
-		});
+			let uranusMoons = [
 
-		let uranusMoons = [
+				{
+					name: 'Miranda',
+					size: 0.025, //474 km
+					texture: (__dirname + './../textures/Uranus/moons/Miranda/surface.jpg'),
+					normal: (__dirname + './../textures/Uranus/moons/Miranda/normal.png'),
+					velocity: (24067.7 / 10000),
+					distance:  1
+				},
+				{
+					name: 'Ariel',
+					size: 0.09, //1159 km
+					texture: (__dirname + './../textures/Uranus/moons/Ariel/surface.jpg'),
+					normal: (__dirname + './../textures/Uranus/moons/Ariel/normal.png'),
+					velocity: (19832.3 / 10000),
+					distance:  3
+				},
+				{
+					name: 'Umbriel',
+					size: 0.091, //1169 km
+					texture: (__dirname + './../textures/Uranus/moons/Umbriel/surface.jpg'),
+					normal: (__dirname + './../textures/Uranus/moons/Umbriel/normal.png'),
+					velocity: (16804.6 / 10000),
+					distance:  4
+				},
+				{
+					name: 'Titania',
+					size: 0.111, //1578 km
+					texture: (__dirname + './../textures/Uranus/moons/Titania/surface.jpg'),
+					normal: (__dirname + './../textures/Uranus/moons/Titania/normal.png'),
+					velocity: (13120.0 / 10000),
+					distance:  6
+				},
+				{
+					name: 'Oberon',
+					size: 0.11, //1523 km
+					texture: (__dirname + './../textures/Uranus/moons/Oberon/surface.jpg'),
+					normal: (__dirname + './../textures/Uranus/moons/Oberon/normal.png'),
+					velocity: (11349.2 / 10000),
+					distance:  7 //9376 km
+				}
 
-			{
-				name: 'Miranda',
-				size: 0.025, //474 km
-				texture: (__dirname + './../textures/Uranus/moons/Miranda/surface.jpg'),
-				normal: (__dirname + './../textures/Uranus/moons/Miranda/normal.png'),
-				velocity: (24067.7 / 10000),
-				distance:  1
-			},
-			{
-				name: 'Ariel',
-				size: 0.09, //1159 km
-				texture: (__dirname + './../textures/Uranus/moons/Ariel/surface.jpg'),
-				normal: (__dirname + './../textures/Uranus/moons/Ariel/normal.png'),
-				velocity: (19832.3 / 10000),
-				distance:  3
-			},
-			{
-				name: 'Umbriel',
-				size: 0.091, //1169 km
-				texture: (__dirname + './../textures/Uranus/moons/Umbriel/surface.jpg'),
-				normal: (__dirname + './../textures/Uranus/moons/Umbriel/normal.png'),
-				velocity: (16804.6 / 10000),
-				distance:  4
-			},
-			{
-				name: 'Titania',
-				size: 0.111, //1578 km
-				texture: (__dirname + './../textures/Uranus/moons/Titania/surface.jpg'),
-				normal: (__dirname + './../textures/Uranus/moons/Titania/normal.png'),
-				velocity: (13120.0 / 10000),
-				distance:  6
-			},
-			{
-				name: 'Oberon',
-				size: 0.11, //1523 km
-				texture: (__dirname + './../textures/Uranus/moons/Oberon/surface.jpg'),
-				normal: (__dirname + './../textures/Uranus/moons/Oberon/normal.png'),
-				velocity: (11349.2 / 10000),
-				distance:  7 //9376 km
-			}
+			];
 
-		];
+			uranusMoons.forEach(moon=>{
 
-		//name, size, texturePath, parent, velocity, distanceFromPlanet 3.5
+				this.createMoon(moon.name, moon.size, moon.texture, this.planets['uranus'], moon.velocity/10000, moon.distance);
 
-		uranusMoons.forEach(moon=>{
-
-			this.createMoon(moon.name, moon.size, moon.texture, this.planets['uranus'], moon.velocity/10000, moon.distance);
+			});
 
 		});
 
@@ -612,58 +629,58 @@ class AppController {
 			texturePath,
 			new BABYLON.Vector3(this.NeptuneDistance, 0, 0),
 			normalPath
-		);
+		).then(()=>{
+			
+			let neptuneMoons = [
 
-		let neptuneMoons = [
+				{
+					name: 'Proteus',
+					size: 0.08, //420 km
+					texture: (__dirname + './../textures/Neptune/moons/Proteus/surface.jpg'),
+					normal: (__dirname + './../textures/Neptune/moons/Proteus/normal.png'),
+					velocity: (27450.7 / 10000),
+					distance:  8
+				},
+				{
+					name: 'Larissa',
+					size: 0.06, //194 km
+					texture: (__dirname + './../textures/Neptune/moons/Larissa/surface.jpg'),
+					normal: (__dirname + './../textures/Neptune/moons/Larissa/normal.png'),
+					velocity: (34693.4 / 10000),
+					distance:  6
+				},
+				{
+					name: 'Galatea',
+					size: 0.058, //176 km
+					texture: (__dirname + './../textures/Neptune/moons/Galatea/surface.jpg'),
+					normal: (__dirname + './../textures/Neptune/moons/Galatea/normal.png'),
+					velocity: (37807.1 / 10000),
+					distance:  3
+				},
+				{
+					name: 'Despina',
+					size: 0.052, //150 km
+					texture: (__dirname + './../textures/Neptune/moons/Despina/surface.jpg'),
+					normal: (__dirname + './../textures/Neptune/moons/Despina/normal.png'),
+					velocity: (41048.6 / 10000),
+					distance:  1
+				},
+				{
+					name: 'Triton',
+					size: 0.17, //2706 km
+					texture: (__dirname + './../textures/Neptune/moons/Triton/surface.jpg'),
+					normal: (__dirname + './../textures/Neptune/moons/Triton/normal.png'),
+					velocity: (15803.2 / 10000),
+					distance:  12
+				}
 
-			{
-				name: 'Proteus',
-				size: 0.08, //420 km
-				texture: (__dirname + './../textures/Neptune/moons/Proteus/surface.jpg'),
-				normal: (__dirname + './../textures/Neptune/moons/Proteus/normal.png'),
-				velocity: (27450.7 / 10000),
-				distance:  8
-			},
-			{
-				name: 'Larissa',
-				size: 0.06, //194 km
-				texture: (__dirname + './../textures/Neptune/moons/Larissa/surface.jpg'),
-				normal: (__dirname + './../textures/Neptune/moons/Larissa/normal.png'),
-				velocity: (34693.4 / 10000),
-				distance:  6
-			},
-			{
-				name: 'Galatea',
-				size: 0.058, //176 km
-				texture: (__dirname + './../textures/Neptune/moons/Galatea/surface.jpg'),
-				normal: (__dirname + './../textures/Neptune/moons/Galatea/normal.png'),
-				velocity: (37807.1 / 10000),
-				distance:  3
-			},
-			{
-				name: 'Despina',
-				size: 0.052, //150 km
-				texture: (__dirname + './../textures/Neptune/moons/Despina/surface.jpg'),
-				normal: (__dirname + './../textures/Neptune/moons/Despina/normal.png'),
-				velocity: (41048.6 / 10000),
-				distance:  1
-			},
-			{
-				name: 'Triton',
-				size: 0.17, //2706 km
-				texture: (__dirname + './../textures/Neptune/moons/Triton/surface.jpg'),
-				normal: (__dirname + './../textures/Neptune/moons/Triton/normal.png'),
-				velocity: (15803.2 / 10000),
-				distance:  12
-			}
+			];
 
-		];
+			neptuneMoons.forEach(moon=>{
 
-		//name, size, texturePath, parent, velocity, distanceFromPlanet 3.5
+				this.createMoon(moon.name, moon.size, moon.texture, this.planets['neptune'], moon.velocity/10000, moon.distance);
 
-		neptuneMoons.forEach(moon=>{
-
-			this.createMoon(moon.name, moon.size, moon.texture, this.planets['neptune'], moon.velocity/10000, moon.distance);
+			});
 
 		});
 
@@ -671,60 +688,66 @@ class AppController {
 
 	createPlanet(name, size, texturePath, position, normal = null, atmosphere = null, atmosphereLevel = 1, atmosphereColor = new BABYLON.Color3(1,1,1)){
 
-		this.planets[name] = new BABYLON.MeshBuilder.CreateSphere(name, {diameter: size}, this.scene);
+		return new Promise((resolve, reject)=>{
 
-		let mat = new BABYLON.StandardMaterial(name+'Material', this.scene);
-		mat.roughness = 10000;
-		mat.indexOfRefraction = 0;
-		mat.reflectionFresnelParameters = 0;
+			this.planets[name] = new BABYLON.MeshBuilder.CreateSphere(name, {diameter: size}, this.scene);
 
-		if (normal) {
+			let mat = new BABYLON.StandardMaterial(name+'Material', this.scene);
+			mat.roughness = 10000;
+			mat.indexOfRefraction = 0;
+			mat.reflectionFresnelParameters = 0;
 
-			mat.bumpTexture = new BABYLON.Texture(normal, this.scene);
-			mat.bumpTexture.level = 2;
-			//mat.bumpTexture.scale(100);
-			mat.useParallax = true;
-		    mat.useParallaxOcclusion = true;
-		   	mat.parallaxScaleBias = 0.2;
-		    mat.specularPower = 1000.0;
-		    mat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+			if (normal) {
 
-		}
+				mat.bumpTexture = new BABYLON.Texture(normal, this.scene);
+				mat.bumpTexture.level = 2;
+				//mat.bumpTexture.scale(100);
+				mat.useParallax = true;
+			    mat.useParallaxOcclusion = true;
+			   	mat.parallaxScaleBias = 0.2;
+			    mat.specularPower = 1000.0;
+			    mat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
 
-		//mat.diffuseTexture = new BABYLON.Texture(texturePath, this.scene);
+			}
 
-		if (atmosphere) {
-			mat.lightmapTexture = new BABYLON.Texture(atmosphere, this.scene);
-			mat.lightmapTexture.level = atmosphereLevel;
+			//mat.diffuseTexture = new BABYLON.Texture(texturePath, this.scene);
 
-			this.scene.registerBeforeRender(()=>{
+			if (atmosphere) {
+				mat.lightmapTexture = new BABYLON.Texture(atmosphere, this.scene);
+				mat.lightmapTexture.level = atmosphereLevel;
 
-				this.planets[name].material.lightmapTexture.uOffset -= 0.0001;
-				this.planets[name].material.lightmapTexture.vOffset -= 0.0001;
+				this.scene.registerBeforeRender(()=>{
+
+					this.planets[name].material.lightmapTexture.uOffset -= 0.0001;
+					this.planets[name].material.lightmapTexture.vOffset -= 0.0001;
+
+				});
+
+				this.highlightMeshes.addMesh(this.planets[name], atmosphereColor);
+
+			}
+
+			//mat.emissiveColor = new BABYLON.Vector3(0.5,0.5,0.5);
+			//mat.ambientColor = new BABYLON.Vector3(1,1,1);
+			mat.diffuseColor = new BABYLON.Color3(1,1,1);
+
+			mat.emissiveTexture = new BABYLON.Texture(texturePath, this.scene);
+
+			this.planets[name].material = mat;
+			this.planets[name].position = position;
+			this.planets[name].receiveShadows = true;
+
+			this.planets[name].addLODLevel(1200, null);
+
+			//this.planets[name].renderingGroupId = 10;
+
+			/**/this.scene.registerBeforeRender(()=>{
+
+				this.planets[name].rotation.y += 0.001;
 
 			});
 
-			this.highlightMeshes.addMesh(this.planets[name], atmosphereColor);
-
-		}
-
-		//mat.emissiveColor = new BABYLON.Vector3(0.5,0.5,0.5);
-		//mat.ambientColor = new BABYLON.Vector3(1,1,1);
-		mat.diffuseColor = new BABYLON.Color3(1,1,1);
-
-		mat.emissiveTexture = new BABYLON.Texture(texturePath, this.scene);
-
-		this.planets[name].material = mat;
-		this.planets[name].position = position;
-		this.planets[name].receiveShadows = true;
-
-		this.planets[name].addLODLevel(1200, null);
-
-		//this.planets[name].renderingGroupId = 10;
-
-		/**/this.scene.registerBeforeRender(()=>{
-
-			this.planets[name].rotation.y += 0.001;
+			resolve();
 
 		});
 
@@ -1149,6 +1172,104 @@ class AppController {
 				}
 
 				this.devCamera.position.x += velocity;
+
+			}
+
+		});
+
+	}
+
+	initGUI(){
+
+		return new Promise((resolve, reject)=>{
+
+			this.GUI = BABYLON_GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI');
+
+			for(let planet in this.planets){
+
+				let box = new BABYLON_GUI.Rectangle();
+				box.width = 0.2;
+				box.height = 0.04;
+				box.background = 'rgba(0,0,0,0)';
+				box.color = 'rgba(255,255,255,0)';
+				box.cornerRadius = 20;
+
+				this.GUI.addControl(box);
+
+				let textBlock = new BABYLON_GUI.TextBlock();
+				textBlock.text = planet.toUpperCase();
+				textBlock.fontSizeInPixels = 16;
+				textBlock.color = '#00BFFF';
+				box.addControl(textBlock);
+
+				box.linkWithMesh(this.planets[planet]);
+				box.linkOffsetY = -50;
+
+				this.planetsGUIs[planet] = {
+					box,
+					textBlock
+				};
+
+			}
+
+			resolve();
+
+		});
+
+	}
+
+	controlPlanetsGUI(){
+
+		let maxDistanceToVisibleGUI = 150;
+		let minDistanceToVisibleGUI = 0;
+
+		this.scene.registerBeforeRender(()=>{
+
+			for(let planet in this.planets){
+
+				switch (planet) {
+
+					case 'mercury':
+						minDistanceToVisibleGUI = 10;
+						break;
+
+					case 'venus':
+						minDistanceToVisibleGUI = 15;
+						break;
+
+					case 'earth':
+						minDistanceToVisibleGUI = 25;
+						break;
+
+					case 'mars':
+						minDistanceToVisibleGUI = 20;
+						break;
+
+					case 'jupiter':
+						minDistanceToVisibleGUI = 55;
+						break;
+
+					case 'saturn':
+						minDistanceToVisibleGUI = 55;
+						break;
+
+					case 'uranus':
+						minDistanceToVisibleGUI = 55;
+						break;
+
+					case 'neptune':
+						minDistanceToVisibleGUI = 55;
+						break;
+					
+				}
+
+				if (this.devCamera.position.equalsWithEpsilon(this.planets[planet].position, minDistanceToVisibleGUI) || !this.devCamera.position.equalsWithEpsilon(this.planets[planet].position, maxDistanceToVisibleGUI)) {
+
+					this.planetsGUIs[planet].box.isVisible = false;
+
+				} else {
+					this.planetsGUIs[planet].box.isVisible = true;
+				}
 
 			}
 
