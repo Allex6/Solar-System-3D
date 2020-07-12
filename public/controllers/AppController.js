@@ -24,6 +24,7 @@ class AppController {
 		this.planetsGUIs = [];
 
 		this.timesPresented = 0;
+		this.actualStatus = 'loading-scene';
 
 		// The following values have been modified for better viewing, since in the real universe, it would be very difficult to maintain fidelity
 		// real values are being divided by 15 thousand
@@ -60,25 +61,17 @@ class AppController {
 		this.NeptuneVelocity = 5.43;
 
 		this.initializeScene();
-		this.initializeStars().then(()=>{
 
-			this.initGUI().then(()=>{
-				this.controlPlanetsGUI();
-				this.presentPlanets();
-			});
-
-		});
+		this.controlLoadingItems();
+		this.initializeStars();
+		this.initGUI();
 
 		this.engine.runRenderLoop(()=>{
-
 			this.scene.render();
-
 		});
 
 		window.addEventListener("resize", ()=>{
-
 			this.engine.resize();
-
 		});
 
 	}
@@ -115,28 +108,43 @@ class AppController {
 
 	}
 
+	controlLoadingItems(){
+
+		this.scene.whenReadyAsync().then(()=>{
+			console.log("aqui");
+
+			alert("Todos os objetos foram carregados");
+		});
+
+		let check = ()=>{
+
+			console.log(this.scene.getWaitingItemsCount());
+
+			if (this.scene.getWaitingItemsCount() == 0) {
+				this.scene.unregisterBeforeRender(check);
+			}
+
+		};
+
+		this.scene.registerBeforeRender(check);
+
+	}
+
 	initializeStars(){
 
-		return new Promise((resolve, reject)=>{
+		this.controlAtmospheres();
 
-			this.controlAtmospheres();
+		this.initSun();
+		this.initMercury();
+		this.initVenus();
+		this.initEarth();
+		this.initMars();
+		this.initJupiter();
+		this.initSaturn();
+		this.initUranus();
+		this.initNeptune();
 
-			this.initSun();
-			this.devCamera.setTarget(this.sun.position);
-			this.initMercury();
-			this.initVenus();
-			this.initEarth();
-			this.initMars();
-			this.initJupiter();
-			this.initSaturn();
-			this.initUranus();
-			this.initNeptune();
-
-			this.createOrbits();
-
-			resolve();
-
-		});
+		this.createOrbits();
 
 	}
 
@@ -144,17 +152,14 @@ class AppController {
 
 		let sunMaterial = new BABYLON.StandardMaterial('sunMaterial', this.scene);
 		sunMaterial.diffuseTexture = new BABYLON.Texture(__dirname + './../textures/Sun/surface.jpg', this.scene);
-		//sunMaterial.distortionTexture = new BABYLON.Texture(__dirname + './../textures/Sun/distortion.png', this.scene);
-		//sunMaterial.opacityTexture = new BABYLON.Texture(__dirname + './../textures/Sun/opacity.png', this.scene);
 
 		sunMaterial.emissiveColor = new BABYLON.Color3(0.8, 0.3, 0);
 		sunMaterial.diffuseColor = new BABYLON.Color3(1, 1, 1);
 		sunMaterial.linkEmissiveWithDiffuse = true;
-		//sunMaterial.speed = 0.15;
 
 		this.sun = new BABYLON.MeshBuilder.CreateSphere('sun', {diameter: this.SunSize}, this.scene);
 
-		/**/let glowEffect = new BABYLON.GlowLayer("glow", this.scene, {mainTextureFixedSize: 128, blurKernelSize: 64, mainTextureSamples: 4});
+		let glowEffect = new BABYLON.GlowLayer("glow", this.scene, {mainTextureFixedSize: 128, blurKernelSize: 64, mainTextureSamples: 4});
 
 		glowEffect.intensity = 8.0;
 		glowEffect.addIncludedOnlyMesh(this.sun);
@@ -1029,94 +1034,91 @@ class AppController {
 
 	initGUI(){
 
-		return new Promise((resolve, reject)=>{
+		this.GUI = BABYLON_GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI');
 
-			this.GUI = BABYLON_GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI');
+		for(let planet in this.planets){
 
-			for(let planet in this.planets){
+			let box = new BABYLON_GUI.Rectangle();
+			box.width = 0.2;
+			box.height = 0.04;
+			box.background = 'rgba(0,0,0,0)';
+			box.color = 'rgba(255,255,255,0)';
+			box.cornerRadius = 20;
 
-				let box = new BABYLON_GUI.Rectangle();
-				box.width = 0.2;
-				box.height = 0.04;
-				box.background = 'rgba(0,0,0,0)';
-				box.color = 'rgba(255,255,255,0)';
-				box.cornerRadius = 20;
+			this.GUI.addControl(box);
 
-				this.GUI.addControl(box);
+			let textBlock = new BABYLON_GUI.TextBlock();
+			textBlock.text = planet.toUpperCase();
+			textBlock.fontSizeInPixels = 16;
+			textBlock.color = '#00BFFF';
+			box.addControl(textBlock);
 
-				let textBlock = new BABYLON_GUI.TextBlock();
-				textBlock.text = planet.toUpperCase();
-				textBlock.fontSizeInPixels = 16;
-				textBlock.color = '#00BFFF';
-				box.addControl(textBlock);
+			box.linkWithMesh(this.planets[planet]);
+			box.linkOffsetY = -50;
 
-				box.linkWithMesh(this.planets[planet]);
-				box.linkOffsetY = -50;
+			this.planetsGUIs[planet] = {
+				box,
+				textBlock
+			};
 
-				this.planetsGUIs[planet] = {
-					box,
-					textBlock
-				};
+		}
+
+		let button = new BABYLON_GUI.Button('skip-presentation');
+		button.horizontalAlignment = BABYLON_GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+		button.verticalAlignment = BABYLON_GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+
+		button.paddingBottom = '15px';
+		button.paddingRight = '15px';
+		
+		button.width = 0.35;
+		button.height = 0.07;
+		button.background = 'rgba(0,0,0,0.5)';
+		button.color = '#00BFFF';
+		button.cornerRadius = 20;
+
+		let textBlock = new BABYLON_GUI.TextBlock();
+		textBlock.text = "SKIP PRESENTATION";
+		textBlock.fontSizeInPixels = 16;
+		textBlock.color = '#00BFFF';
+
+		button.addControl(textBlock);
+		this.GUI.addControl(button);
+
+		button.onPointerClickObservable.add((e)=>{
+
+			this.GUI.removeControl(button);
+			this.endPresentation();
+
+		});
+
+		this.scene.onKeyboardObservable.add((e)=>{
+
+			if (e.event.type == 'keydown') {
+
+				switch (e.event.key.toUpperCase()) {
+
+					case 'SHIFT':
+						this.devCamera.speed = 50;
+						break;
+				
+				}
+
+			} else if (e.event.type == 'keyup') {
+				
+				switch (e.event.key.toUpperCase()) {
+
+					case 'SHIFT':
+						this.devCamera.speed = this.cameraInitialSpeed;
+						break;
+				
+				}
 
 			}
 
-			let button = new BABYLON_GUI.Button('skip-presentation');
-			button.horizontalAlignment = BABYLON_GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-			button.verticalAlignment = BABYLON_GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
-
-			button.paddingBottom = '15px';
-			button.paddingRight = '15px';
-			
-			button.width = 0.35;
-			button.height = 0.07;
-			button.background = 'rgba(0,0,0,0.5)';
-			button.color = '#00BFFF';
-			button.cornerRadius = 20;
-
-			let textBlock = new BABYLON_GUI.TextBlock();
-			textBlock.text = "SKIP PRESENTATION";
-			textBlock.fontSizeInPixels = 16;
-			textBlock.color = '#00BFFF';
-
-			button.addControl(textBlock);
-			this.GUI.addControl(button);
-
-			button.onPointerClickObservable.add((e)=>{
-
-				this.GUI.removeControl(button);
-				this.endPresentation();
-
-			});
-
-			this.scene.onKeyboardObservable.add((e)=>{
-
-				if (e.event.type == 'keydown') {
-
-					switch (e.event.key.toUpperCase()) {
-
-						case 'SHIFT':
-							this.devCamera.speed = 50;
-							break;
-					
-					}
-
-				} else if (e.event.type == 'keyup') {
-					
-					switch (e.event.key.toUpperCase()) {
-
-						case 'SHIFT':
-							this.devCamera.speed = this.cameraInitialSpeed;
-							break;
-					
-					}
-
-				}
-
-			});
-
-			resolve();
-
 		});
+
+		this.controlPlanetsGUI();
+		this.presentPlanets();
 
 	}
 
