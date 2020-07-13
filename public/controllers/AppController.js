@@ -71,7 +71,9 @@ class AppController {
 			'saturn': 0.02456,
 			'uranus': 0.0098640458,
 			'neptune': 0.00647933
-		}
+		};
+
+		this.SunRotationSpeed = 0.0047928;
 
 		this.initializeScene();
 
@@ -194,7 +196,7 @@ class AppController {
 		this.initUranus();
 		this.initNeptune();
 
-		this.createOrbits();
+		//this.createOrbits();
 
 	}
 
@@ -209,18 +211,26 @@ class AppController {
 
 		this.sun = new BABYLON.MeshBuilder.CreateSphere('sun', {diameter: this.SunSize}, this.scene);
 
-		let glowEffect = new BABYLON.GlowLayer("glow", this.scene, {mainTextureFixedSize: 128, blurKernelSize: 64, mainTextureSamples: 4});
+		/*let glowEffect = new BABYLON.GlowLayer("glow", this.scene, {mainTextureFixedSize: 128, blurKernelSize: 64, mainTextureSamples: 4});
 
 		glowEffect.intensity = 8.0;
-		glowEffect.addIncludedOnlyMesh(this.sun);
+		glowEffect.addIncludedOnlyMesh(this.sun);*/
 
 		this.sun.material = sunMaterial;
 
 		this.sunLight = new BABYLON.PointLight('sunLight', new BABYLON.Vector3(0,0,0), this.scene);
 		this.sunLight.intensity = 0.4;
 
-		//let vls = new BABYLON.VolumetricLightScatteringPostProcess('vls', { postProcessRatio: 1.0, passRatio: 1.0 }, this.devCamera, this.sun, 50, BABYLON.Texture.BILINEAR_SAMPLINGMODE, this.engine, false, this.scene);
-		//vls.useDiffuseColor = true;
+		let vls = new BABYLON.VolumetricLightScatteringPostProcess('vls', { postProcessRatio: 1.0, passRatio: 1.0 }, this.devCamera, this.sun, 50, BABYLON.Texture.BILINEAR_SAMPLINGMODE, this.engine, false, this.scene);
+		vls.useDiffuseColor = true;
+
+		/*this.scene.registerBeforeRender(()=>{
+
+			this.sun.rotation.y += this.SunRotationSpeed;
+			this.sun.rotation.x += this.SunRotationSpeed / 2;
+			this.sun.rotation.z += this.SunRotationSpeed / 2;
+
+		});*/
 
 	}
 
@@ -241,7 +251,7 @@ class AppController {
 			new BABYLON.Color3(0, 0.5, 0.6)
 		).then(()=>{
 
-			this.createMoon('moon', this.MoonSize, (__dirname + './../textures/Moon/surface.jpg'), this.planets['earth'], 0.002316333);
+			this.createMoon('moon', this.MoonSize, (__dirname + './../textures/Moon/surface.jpg'), this.planets['earth'], 0.002316333, 2.562667);
 
 			this.planets['earth'].material.lightmapTexture.uAng = Math.PI;
 			this.planets['earth'].material.lightmapTexture.invertZ = true;
@@ -275,16 +285,16 @@ class AppController {
 					size: 0.015,
 					texture: (__dirname + './../textures/Mars/moons/Phobos/surface.jpg'),
 					normal: (__dirname + './../textures/Mars/moons/Phobos/normal.png'),
-					velocity: (7696.7 / 10000),
-					distance:  1 
+					velocity: 0.005131133,
+					distance:  0.625133 
 				},
 				{
 					name: 'Deimos',
 					size: 0.008, 
 					texture: (__dirname + './../textures/Mars/moons/Deimos/surface.jpg'),
 					normal: (__dirname + './../textures/Mars/moons/Deimos/normal.png'),
-					velocity: (4864.8 / 10000),
-					distance:  5 
+					velocity: 0.0032432,
+					distance:  1.5624 
 				}
 
 
@@ -292,7 +302,7 @@ class AppController {
 
 			marsMoons.forEach(moon=>{
 
-				this.createMoon(moon.name, moon.size, moon.texture, this.planets['mars'], moon.velocity/10000, moon.distance);
+				this.createMoon(moon.name, moon.size, moon.texture, this.planets['mars'], moon.velocity, moon.distance);
 
 			});
 
@@ -339,63 +349,63 @@ class AppController {
 					size: 0.21,
 					texture: (__dirname + './../textures/Jupiter/moons/Io/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Io/normal.png'),
-					velocity: (62424 / 10000),
-					distance:  5
+					velocity: 0.416154,
+					distance:  2.8
 				},
 				{
 					name: 'Europa',
 					size: 0.18, //3.121,6 km
 					texture: (__dirname + './../textures/Jupiter/moons/Europa/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Europa/normal.png'),
-					velocity: (49464 / 10000),
-					distance:  7
+					velocity: 0.329,
+					distance:  4.474
 				},
 				{
 					name: 'Ganimedes',
 					size: 0.31, //5262 km
 					texture: (__dirname + './../textures/Jupiter/moons/Ganimedes/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Ganimedes/normal.png'),
-					velocity: (39165.6 / 10000),
-					distance:  10
+					velocity: 0.26,
+					distance:  7.136
 				},
 				{
 					name: 'Callisto',
 					size: 0.28, //4821 km
 					texture: (__dirname + './../textures/Jupiter/moons/Callisto/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Callisto/normal.png'),
-					velocity: (29534.4 / 10000),
-					distance:  12
+					velocity: 0.19,
+					distance:  12.5
 				},
 				{
 					name: 'Amalthea',
 					size: 0.001, //167 km
 					texture: (__dirname + './../textures/Jupiter/moons/Amalthea/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Amalthea/normal.png'),
-					velocity: (95652 / 10000),
-					distance:  14
+					velocity: 0.6,
+					distance:  1.209
 				},
 				{
 					name: 'Himalia',
 					size: 0.0011, //170 km
 					texture: (__dirname + './../textures/Jupiter/moons/Himalia/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Himalia/normal.png'),
-					velocity: (11895.90 / 10000),
-					distance:  16
+					velocity: 0.07,
+					distance:  76.4
 				},
 				{
 					name: 'Elara',
 					size: 0.00056, //86 km
 					texture: (__dirname + './../textures/Jupiter/moons/Elara/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Elara/normal.png'),
-					velocity: (11697.5 / 10000),
-					distance:  18
+					velocity: 0.07798,
+					distance:  78.27
 				},
 				{
 					name: 'Pasiphae',
 					size: 0.00052, //86 km
 					texture: (__dirname + './../textures/Jupiter/moons/Pasiphae/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Pasiphae/normal.png'),
-					velocity: (7957.40 / 10000),
+					velocity: (7957.40),
 					distance:  21
 				},
 				{
@@ -403,7 +413,7 @@ class AppController {
 					size: 0.00021, //36 km
 					texture: (__dirname + './../textures/Jupiter/moons/Lysithea/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Lysithea/normal.png'),
-					velocity: (11844 / 10000),
+					velocity: (11844),
 					distance:  26
 				},
 				{
@@ -411,7 +421,7 @@ class AppController {
 					size: 0.00030, //46 km
 					texture: (__dirname + './../textures/Jupiter/moons/Carme/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Carme/normal.png'),
-					velocity: (8110.8 / 10000),
+					velocity: (8110.8),
 					distance:  28
 				},
 				{
@@ -419,7 +429,7 @@ class AppController {
 					size: 0.00019, //28 km
 					texture: (__dirname + './../textures/Jupiter/moons/Ananke/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Ananke/normal.png'),
-					velocity: (8712.00 / 10000),
+					velocity: (8712.00),
 					distance:  30
 				},
 				{
@@ -427,7 +437,7 @@ class AppController {
 					size: 0.00015, //16 km
 					texture: (__dirname + './../textures/Jupiter/moons/Leda/surface.png'),
 					normal: (__dirname + './../textures/Jupiter/moons/Leda/normal.png'),
-					velocity: (43.2 / 10000),
+					velocity: (43.2),
 					distance:  33
 				},
 				{
@@ -435,7 +445,7 @@ class AppController {
 					size: 0.00060, //96.8 km
 					texture: (__dirname + './../textures/Jupiter/moons/Thebe/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Thebe/normal.png'),
-					velocity: (86112 / 10000),
+					velocity: (86112),
 					distance:  35
 				},
 				{
@@ -443,7 +453,7 @@ class AppController {
 					size: 0.000152, //16.4 km
 					texture: (__dirname + './../textures/Jupiter/moons/Adrastea/surface.png'),
 					normal: (__dirname + './../textures/Jupiter/moons/Adrastea/normal.png'),
-					velocity: (112960.8 / 10000),
+					velocity: (112960.8),
 					distance:  37
 				}
 
@@ -452,7 +462,7 @@ class AppController {
 
 			jupiterMoons.forEach(moon=>{
 
-				this.createMoon(moon.name, moon.size, moon.texture, this.planets['jupiter'], moon.velocity/10000, moon.distance);
+				this.createMoon(moon.name, moon.size, moon.texture, this.planets['jupiter'], moon.velocity, moon.distance);
 
 			});
 
@@ -508,7 +518,7 @@ class AppController {
 					size: 0.025, //396.4 km
 					texture: (__dirname + './../textures/Saturn/moons/Mimas/surface.jpg'),
 					normal: (__dirname + './../textures/Saturn/moons/Mimas/normal.png'),
-					velocity: (51552 / 10000),
+					velocity: (51552),
 					distance:  5 //1221 km
 				},
 				{
@@ -516,7 +526,7 @@ class AppController {
 					size: 0.028, //396.4 km
 					texture: (__dirname + './../textures/Saturn/moons/Enceladus/surface.jpg'),
 					normal: (__dirname + './../textures/Saturn/moons/Enceladus/normal.png'),
-					velocity: (45487.3 / 10000),
+					velocity: (45487.3),
 					distance:  7 //1221 km
 				},
 				{
@@ -524,7 +534,7 @@ class AppController {
 					size: 0.092, //1062 km
 					texture: (__dirname + './../textures/Saturn/moons/Thetys/surface.jpg'),
 					normal: (__dirname + './../textures/Saturn/moons/Thetys/normal.png'),
-					velocity: (40086.3 / 10000),
+					velocity: (40086.3),
 					distance:  10 //1221 km
 				},
 				{
@@ -532,7 +542,7 @@ class AppController {
 					size: 0.095, //1122,8 km
 					texture: (__dirname + './../textures/Saturn/moons/Dione/surface.jpg'),
 					normal: (__dirname + './../textures/Saturn/moons/Dione/normal.png'),
-					velocity: (36100.4 / 10000),
+					velocity: (36100.4),
 					distance:  12 //1221 km
 				},
 				{
@@ -540,7 +550,7 @@ class AppController {
 					size: 0.11, //1.527,6 km
 					texture: (__dirname + './../textures/Saturn/moons/Rhea/surface.jpg'),
 					normal: (__dirname + './../textures/Saturn/moons/Rhea/normal.png'),
-					velocity: (30541.4 / 10000),
+					velocity: (30541.4),
 					distance:  13 //1221 km
 				},
 				{
@@ -548,7 +558,7 @@ class AppController {
 					size: 0.305, //5149.5 km
 					texture: (__dirname + './../textures/Saturn/moons/Titan/surface.jpg'),
 					normal: (__dirname + './../textures/Saturn/moons/Titan/normal.png'),
-					velocity: (20051.2 / 10000),
+					velocity: (20051.2),
 					distance:  17 //1221 km
 				},
 				{
@@ -556,7 +566,7 @@ class AppController {
 					size: 0.105, //1.469 km
 					texture: (__dirname + './../textures/Saturn/moons/Iapetus/surface.jpg'),
 					normal: (__dirname + './../textures/Saturn/moons/Iapetus/normal.png'),
-					velocity: (11748.8 / 10000),
+					velocity: (11748.8),
 					distance:  19 //1221 km
 				}
 
@@ -565,7 +575,7 @@ class AppController {
 
 			saturnMoons.forEach(moon=>{
 
-				this.createMoon(moon.name, moon.size, moon.texture, this.planets['saturn'], moon.velocity/10000, moon.distance);
+				this.createMoon(moon.name, moon.size, moon.texture, this.planets['saturn'], moon.velocity, moon.distance);
 
 			});
 
@@ -607,7 +617,7 @@ class AppController {
 					size: 0.025, //474 km
 					texture: (__dirname + './../textures/Uranus/moons/Miranda/surface.jpg'),
 					normal: (__dirname + './../textures/Uranus/moons/Miranda/normal.png'),
-					velocity: (24067.7 / 10000),
+					velocity: (24067.7),
 					distance:  1
 				},
 				{
@@ -615,7 +625,7 @@ class AppController {
 					size: 0.09, //1159 km
 					texture: (__dirname + './../textures/Uranus/moons/Ariel/surface.jpg'),
 					normal: (__dirname + './../textures/Uranus/moons/Ariel/normal.png'),
-					velocity: (19832.3 / 10000),
+					velocity: (19832.3),
 					distance:  3
 				},
 				{
@@ -623,7 +633,7 @@ class AppController {
 					size: 0.091, //1169 km
 					texture: (__dirname + './../textures/Uranus/moons/Umbriel/surface.jpg'),
 					normal: (__dirname + './../textures/Uranus/moons/Umbriel/normal.png'),
-					velocity: (16804.6 / 10000),
+					velocity: (16804.6),
 					distance:  4
 				},
 				{
@@ -631,7 +641,7 @@ class AppController {
 					size: 0.111, //1578 km
 					texture: (__dirname + './../textures/Uranus/moons/Titania/surface.jpg'),
 					normal: (__dirname + './../textures/Uranus/moons/Titania/normal.png'),
-					velocity: (13120.0 / 10000),
+					velocity: (13120.0),
 					distance:  6
 				},
 				{
@@ -639,7 +649,7 @@ class AppController {
 					size: 0.11, //1523 km
 					texture: (__dirname + './../textures/Uranus/moons/Oberon/surface.jpg'),
 					normal: (__dirname + './../textures/Uranus/moons/Oberon/normal.png'),
-					velocity: (11349.2 / 10000),
+					velocity: (11349.2),
 					distance:  7 //9376 km
 				}
 
@@ -647,7 +657,7 @@ class AppController {
 
 			uranusMoons.forEach(moon=>{
 
-				this.createMoon(moon.name, moon.size, moon.texture, this.planets['uranus'], moon.velocity/10000, moon.distance);
+				this.createMoon(moon.name, moon.size, moon.texture, this.planets['uranus'], moon.velocity, moon.distance);
 
 			});
 
@@ -673,7 +683,7 @@ class AppController {
 					size: 0.08, //420 km
 					texture: (__dirname + './../textures/Neptune/moons/Proteus/surface.jpg'),
 					normal: (__dirname + './../textures/Neptune/moons/Proteus/normal.png'),
-					velocity: (27450.7 / 10000),
+					velocity: (27450.7),
 					distance:  8
 				},
 				{
@@ -681,7 +691,7 @@ class AppController {
 					size: 0.06, //194 km
 					texture: (__dirname + './../textures/Neptune/moons/Larissa/surface.jpg'),
 					normal: (__dirname + './../textures/Neptune/moons/Larissa/normal.png'),
-					velocity: (34693.4 / 10000),
+					velocity: (34693.4),
 					distance:  6
 				},
 				{
@@ -689,7 +699,7 @@ class AppController {
 					size: 0.058, //176 km
 					texture: (__dirname + './../textures/Neptune/moons/Galatea/surface.jpg'),
 					normal: (__dirname + './../textures/Neptune/moons/Galatea/normal.png'),
-					velocity: (37807.1 / 10000),
+					velocity: (37807.1),
 					distance:  3
 				},
 				{
@@ -697,7 +707,7 @@ class AppController {
 					size: 0.052, //150 km
 					texture: (__dirname + './../textures/Neptune/moons/Despina/surface.jpg'),
 					normal: (__dirname + './../textures/Neptune/moons/Despina/normal.png'),
-					velocity: (41048.6 / 10000),
+					velocity: (41048.6),
 					distance:  1
 				},
 				{
@@ -705,7 +715,7 @@ class AppController {
 					size: 0.17, //2706 km
 					texture: (__dirname + './../textures/Neptune/moons/Triton/surface.jpg'),
 					normal: (__dirname + './../textures/Neptune/moons/Triton/normal.png'),
-					velocity: (15803.2 / 10000),
+					velocity: (15803.2),
 					distance:  12
 				}
 
@@ -713,7 +723,7 @@ class AppController {
 
 			neptuneMoons.forEach(moon=>{
 
-				this.createMoon(moon.name, moon.size, moon.texture, this.planets['neptune'], moon.velocity/10000, moon.distance);
+				this.createMoon(moon.name, moon.size, moon.texture, this.planets['neptune'], moon.velocity, moon.distance);
 
 			});
 
@@ -816,6 +826,8 @@ class AppController {
 
 		let n = Math.floor(Math.random() * 11);
 
+		//distanceFromPlanet *= 10;
+
 		let xValue = distanceFromPlanet;
 		let zValue = distanceFromPlanet;
 
@@ -827,6 +839,9 @@ class AppController {
 
 		moon.position = new BABYLON.Vector3(distanceFromPlanet, variationY, 0);
 		moon.parent = parent;
+		parent.billboardMode = BABYLON.BILLBOARDMODE_NONE;
+		moon.billboardMode = BABYLON.BILLBOARDMODE_NONE;
+		//moon.preserveParentRotationForBillboard = true;
 
 		moon.addLODLevel(500, null);
 
