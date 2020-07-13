@@ -13,7 +13,7 @@
   "devDependencies": {},
   "scripts": {
     "start": "electron .",
-    "win64": "electron-packager . Solar System 3D --platform=win32 --arch=x64"
+    "win64": "electron-packager . Solar System 3D --platform=win32 --arch=x64 --asar"
   },
   "repository": {
     "type": "git",

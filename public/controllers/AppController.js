@@ -60,6 +60,19 @@ class AppController {
 		this.UranusVelocity = 6.80;
 		this.NeptuneVelocity = 5.43;
 
+		// real values are being divided by 1 million and 500 thousand
+
+		this.planetsRotations = {
+			'mercury': 0.0000072613,
+			'venus': 0.0000043467,
+			'earth': 0.00107289,
+			'mars': 0.00057881,
+			'jupiter': 0.03038108,
+			'saturn': 0.02456,
+			'uranus': 0.0098640458,
+			'neptune': 0.00647933
+		}
+
 		this.initializeScene();
 
 		this.controlLoadingItems();
@@ -82,6 +95,8 @@ class AppController {
 		this.scene.debugLayer.show({
 			embedMode: true
 		});
+
+		this.initLoadingScreen();
 
 		this.scene.ambientColor = new BABYLON.Color3(1,1,1);
 
@@ -110,15 +125,20 @@ class AppController {
 
 	controlLoadingItems(){
 
-		this.scene.whenReadyAsync().then(()=>{
-			console.log("aqui");
+		this.engine.loadingScreen.displayLoadingUI();
 
-			alert("Todos os objetos foram carregados");
+		this.scene.whenReadyAsync().then(()=>{
+
+			this.engine.loadingScreen.hideLoadingUI();
+			this.presentPlanets();
+
 		});
 
 		let check = ()=>{
 
 			console.log(this.scene.getWaitingItemsCount());
+
+			window.document.getElementById("items-remaining-to-be-loaded").innerHTML = this.scene.getWaitingItemsCount();
 
 			if (this.scene.getWaitingItemsCount() == 0) {
 				this.scene.unregisterBeforeRender(check);
@@ -127,6 +147,36 @@ class AppController {
 		};
 
 		this.scene.registerBeforeRender(check);
+
+	}
+
+	initLoadingScreen(){
+
+		let loadingScreenDiv = window.document.getElementById("loading-screen");
+		let t = this;
+
+		class LoadingScreen {
+
+			displayLoadingUI(){
+				loadingScreenDiv.innerHTML = `
+					<h1>Loading...</h1> 
+					<p style='font-size: 24px;'><span id='items-remaining-to-be-loaded'>${t.scene.getWaitingItemsCount()}</span> Items remaining...</p>
+				`;
+				loadingScreenDiv.style.display = 'flex';
+				t.canvas.style.display = 'none';
+			}
+
+			hideLoadingUI(){
+				loadingScreenDiv.style.display = "none";
+            	t.canvas.style.display = 'block';
+			}
+
+		}
+
+        let loadScreen = new LoadingScreen();
+        this.engine.loadingScreen = loadScreen;
+
+        this.engine.displayLoadingUI();
 
 	}
 
@@ -735,7 +785,7 @@ class AppController {
 
 			this.scene.registerBeforeRender(()=>{
 
-				this.planets[name].rotation.y += 0.001;
+				this.planets[name].rotation.y += this.planetsRotations[name];
 
 			});
 
@@ -762,7 +812,7 @@ class AppController {
 
 		moon.material = mat;
 		let variationY = Math.random();
-		if (name == 'earth' || name == 'mars') variationY = 30.5;
+		if (name == 'moon' || name == 'Phobos' || name == 'Deimos') variationY = 0;
 
 		let n = Math.floor(Math.random() * 11);
 
@@ -938,7 +988,7 @@ class AppController {
 					this.devCamera.position.y -= this.devCameraVelocityX;
 					
 				} else {
-					this.devCameraVelocityX = 1.00;
+					this.devCameraVelocityX = 0.80;
 				}
 
 				if (this.devCamera.position.y <= 2.5) {
@@ -1118,7 +1168,6 @@ class AppController {
 		});
 
 		this.controlPlanetsGUI();
-		this.presentPlanets();
 
 	}
 
