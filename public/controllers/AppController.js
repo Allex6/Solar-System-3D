@@ -8,15 +8,16 @@ class AppController {
 		this.canvas = document.getElementById("renderCanvas");
 		let options = {
 			stencil: true,
-			doNotHandleContextLost: false,
+			doNotHandleContextLost: true,
 			useGeometryIdsMap: true,
 			useMaterialMeshMap: true,
 			useClonedMeshMap: true
 		};
 		let antialising = true;
 		this.engine = new BABYLON.Engine(this.canvas, antialising, options, true);
+		this.engine.enableOfflineSupport = false;
 
-		this.cameraInitialSpeed = 1.5;
+		this.cameraInitialSpeed = 5.0;
 
 		this.eventsController = new EventEmitter();
 
@@ -24,32 +25,29 @@ class AppController {
 		this.planetsGUIs = [];
 
 		this.timesPresented = 0;
-		this.actualStatus = 'loading-scene';
 
-		// The following values have been modified for better viewing, since in the real universe, it would be very difficult to maintain fidelity
-		// real values are being divided by 15 thousand
+		this.cameraInitialPosition = new BABYLON.Vector3(0, 220, 0);
+		this.cameraInitialRotation = Math.PI / 2;
 
-		this.SunSize = 92.84; //20.0
-		this.MercurySize = 0.3259; //0.4
-		this.VenusSize = 0.8069; //1.0
-		this.EarthSize = 0.8494; //1.1
-		this.MoonSize = 0.2316; //0.2
-		this.MarsSize = 0.4519; //0.7
-		this.JupiterSize = 9.321; //4.5
-		this.SaturnSize = 7.764; //4.1
-		this.UranusSize = 3.3816; //2.5
-		this.NeptuneSize = 3.2829; //2.1
+		this.SunSize = 928.4;
+		this.MercurySize = 3.259;
+		this.VenusSize = 8.069;
+		this.EarthSize = 8.494;
+		this.MoonSize = 2.316;
+		this.MarsSize = 4.519;
+		this.JupiterSize = 93.21;
+		this.SaturnSize = 77.64;
+		this.UranusSize = 33.816;
+		this.NeptuneSize = 32.829;
 
-		// real values are being divided by 1 million and 500 thousand
-
-		this.MercuryDistance = 38.66 + this.SunSize; //20;
-		this.VenusDistance = 72 + this.SunSize; //35;
-		this.EarthDistance = 100 + this.SunSize; //60;
-		this.MarsDistance = 153.3 + this.SunSize;//85;
-		this.JupiterDistance = 518.66 + this.SunSize; //140;
-		this.SaturnDistance = 952.9 + this.SunSize; //260;
-		this.UranusDistance = 1913.9 + this.SunSize; //380;
-		this.NeptuneDistance = 3002.8 + this.SunSize; //620;
+		this.MercuryDistance = 0.66 + this.SunSize;
+		this.VenusDistance = 122 + this.SunSize;
+		this.EarthDistance = 281 + this.SunSize;
+		this.MarsDistance = 563.3 + this.SunSize
+		this.JupiterDistance = 1438.66 + this.SunSize;
+		this.SaturnDistance = 2142.9 + this.SunSize;
+		this.UranusDistance = 2833.9 + this.SunSize;
+		this.NeptuneDistance = 3702.8 + this.SunSize;
 
 		this.MercuryVelocity = 47.362;
 		this.VenusVelocity = 35.02;
@@ -59,8 +57,6 @@ class AppController {
 		this.SaturnVelocity = 9.68;
 		this.UranusVelocity = 6.80;
 		this.NeptuneVelocity = 5.43;
-
-		// real values are being divided by 1 million and 500 thousand
 
 		this.planetsRotations = {
 			'mercury': 0.0000072613,
@@ -94,25 +90,18 @@ class AppController {
 	initializeScene(){
 
 		this.scene = new BABYLON.Scene(this.engine);
-		this.scene.debugLayer.show({
-			embedMode: true
-		});
-
 		this.initLoadingScreen();
-
 		this.scene.ambientColor = new BABYLON.Color3(1,1,1);
 
-		this.devCamera = new BABYLON.FlyCamera("DevCamera", new BABYLON.Vector3(0, 0, -40), this.scene);
-		this.devCamera.attachControl(this.canvas, true);
-
-		this.devCamera.position = new BABYLON.Vector3(0, 220, 0);
-		this.devCamera.speed = this.cameraInitialSpeed;
-		this.devCamera.rotation.x = Math.PI / 2;
-		this.devCamera.ellipsoid = new BABYLON.Vector3(0,0,0);
-		this.devCamera.fov = 0.9;
+		this.mainCamera = new BABYLON.FlyCamera("mainCamera", new BABYLON.Vector3(0, 0, -40), this.scene);
+		this.mainCamera.attachControl(this.canvas, true);
+		this.mainCamera.position = this.cameraInitialPosition;
+		this.mainCamera.speed = this.cameraInitialSpeed;
+		this.mainCamera.rotation.x = this.cameraInitialRotation;
+		this.mainCamera.ellipsoid = new BABYLON.Vector3(0,0,0);
+		this.mainCamera.fov = 0.9;
 
 		this.scene.clearColor = new BABYLON.Color3(0,0,0).toLinearSpace();
-
 		this.scene.autoClearDepthAndStencil = false;
 
 		this.createUniverseBox();
@@ -120,8 +109,15 @@ class AppController {
 		this.ambientSound = new BABYLON.Sound('ambientSound', __dirname + './../sound-effects/space-ambient.mp3', this.scene, null, {
 			autoplay: true,
 			loop: true,
-			volume: 0.5
+			volume: 0.4
 		});
+
+		this.highlightMeshes = new BABYLON.HighlightLayer('hl', this.scene);
+		this.highlightMeshes.outerGlow = true;
+		this.highlightMeshes.innerGlow = false;
+
+		this.highlightMeshes.blurHorizontalSize = 0.2;
+		this.highlightMeshes.blurVerticalSize = 0.2;
 
 	}
 
@@ -132,13 +128,20 @@ class AppController {
 		this.scene.whenReadyAsync().then(()=>{
 
 			this.engine.loadingScreen.hideLoadingUI();
-			this.presentPlanets();
+
+			let options = new BABYLON.SceneOptimizerOptions();
+			options.addOptimization(new BABYLON.HardwareScalingOptimization(0, 2));
+			options.addOptimization(new BABYLON.TextureOptimization(0, 2048));
+			options.addOptimization(new BABYLON.RenderTargetsOptimization(0));
+			options.addOptimization(new BABYLON.MergeMeshesOptimization(0));
+
+			BABYLON.SceneOptimizer.OptimizeAsync(this.scene, options, ()=>{
+				this.presentPlanets();
+			});
 
 		});
 
 		let check = ()=>{
-
-			console.log(this.scene.getWaitingItemsCount());
 
 			window.document.getElementById("items-remaining-to-be-loaded").innerHTML = this.scene.getWaitingItemsCount();
 
@@ -184,8 +187,6 @@ class AppController {
 
 	initializeStars(){
 
-		this.controlAtmospheres();
-
 		this.initSun();
 		this.initMercury();
 		this.initVenus();
@@ -196,7 +197,7 @@ class AppController {
 		this.initUranus();
 		this.initNeptune();
 
-		//this.createOrbits();
+		this.createOrbits();
 
 	}
 
@@ -211,26 +212,19 @@ class AppController {
 
 		this.sun = new BABYLON.MeshBuilder.CreateSphere('sun', {diameter: this.SunSize}, this.scene);
 
-		/*let glowEffect = new BABYLON.GlowLayer("glow", this.scene, {mainTextureFixedSize: 128, blurKernelSize: 64, mainTextureSamples: 4});
+		let glowEffect = new BABYLON.GlowLayer("glow", this.scene, {mainTextureFixedSize: 64, blurKernelSize: 16, mainTextureSamples: 4});
 
-		glowEffect.intensity = 8.0;
-		glowEffect.addIncludedOnlyMesh(this.sun);*/
+		glowEffect.intensity = 1.5;
+		glowEffect.addIncludedOnlyMesh(this.sun);
 
 		this.sun.material = sunMaterial;
 
 		this.sunLight = new BABYLON.PointLight('sunLight', new BABYLON.Vector3(0,0,0), this.scene);
 		this.sunLight.intensity = 0.4;
 
-		let vls = new BABYLON.VolumetricLightScatteringPostProcess('vls', { postProcessRatio: 1.0, passRatio: 1.0 }, this.devCamera, this.sun, 50, BABYLON.Texture.BILINEAR_SAMPLINGMODE, this.engine, false, this.scene);
-		vls.useDiffuseColor = true;
-
-		/*this.scene.registerBeforeRender(()=>{
-
+		this.scene.registerBeforeRender(()=>{
 			this.sun.rotation.y += this.SunRotationSpeed;
-			this.sun.rotation.x += this.SunRotationSpeed / 2;
-			this.sun.rotation.z += this.SunRotationSpeed / 2;
-
-		});*/
+		});
 
 	}
 
@@ -251,7 +245,7 @@ class AppController {
 			new BABYLON.Color3(0, 0.5, 0.6)
 		).then(()=>{
 
-			this.createMoon('moon', this.MoonSize, (__dirname + './../textures/Moon/surface.jpg'), this.planets['earth'], 0.002316333, 2.562667);
+			this.createMoon('moon', this.MoonSize, (__dirname + './../textures/Moon/surface.jpg'), (__dirname + './../textures/Moon/normal.jpg'), this.planets['earth'], 0.002316333, 2.562667 + this.EarthSize);
 
 			this.planets['earth'].material.lightmapTexture.uAng = Math.PI;
 			this.planets['earth'].material.lightmapTexture.invertZ = true;
@@ -274,27 +268,25 @@ class AppController {
 			cloudsTexture,
 			0.3,
 			new BABYLON.Color3(0.7, 0.5, 0)
-		).then(()=>{
-
-			// The following values have been modified for better viewing, since in the real universe, it would be very difficult to maintain fidelity. 
+		).then(()=>{ 
 
 			let marsMoons = [
 
 				{
 					name: 'Phobos',
-					size: 0.015,
+					size: 0.15,
 					texture: (__dirname + './../textures/Mars/moons/Phobos/surface.jpg'),
 					normal: (__dirname + './../textures/Mars/moons/Phobos/normal.png'),
 					velocity: 0.005131133,
-					distance:  0.625133 
+					distance:  0.625133  + this.MarsSize
 				},
 				{
 					name: 'Deimos',
-					size: 0.008, 
+					size: 0.08, 
 					texture: (__dirname + './../textures/Mars/moons/Deimos/surface.jpg'),
 					normal: (__dirname + './../textures/Mars/moons/Deimos/normal.png'),
 					velocity: 0.0032432,
-					distance:  1.5624 
+					distance:  3.5624  + this.MarsSize
 				}
 
 
@@ -302,7 +294,7 @@ class AppController {
 
 			marsMoons.forEach(moon=>{
 
-				this.createMoon(moon.name, moon.size, moon.texture, this.planets['mars'], moon.velocity, moon.distance);
+				this.createMoon(moon.name, moon.size, moon.texture, moon.normal, this.planets['mars'], moon.velocity, moon.distance);
 
 			});
 
@@ -338,123 +330,121 @@ class AppController {
 			this.JupiterSize,
 			texturePath,
 			new BABYLON.Vector3(this.JupiterDistance, 0, 0)
-		).then(()=>{
-			
-			// The following values have been modified for better viewing, since in the real universe, it would be very difficult to maintain fidelity. 
+		).then(()=>{ 
 
 			let jupiterMoons = [
 
 				{
 					name: 'Io',
-					size: 0.21,
+					size: 2.1,
 					texture: (__dirname + './../textures/Jupiter/moons/Io/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Io/normal.png'),
-					velocity: 0.416154,
-					distance:  2.8
+					velocity: 0.00416154,
+					distance:  2.0 + this.JupiterSize
 				},
 				{
 					name: 'Europa',
-					size: 0.18, //3.121,6 km
+					size: 1.8,
 					texture: (__dirname + './../textures/Jupiter/moons/Europa/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Europa/normal.png'),
-					velocity: 0.329,
-					distance:  4.474
+					velocity: 0.00329,
+					distance:  6.474 + this.JupiterSize
 				},
 				{
 					name: 'Ganimedes',
-					size: 0.31, //5262 km
+					size: 3.1, 
 					texture: (__dirname + './../textures/Jupiter/moons/Ganimedes/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Ganimedes/normal.png'),
-					velocity: 0.26,
-					distance:  7.136
+					velocity: 0.0026,
+					distance:  15.136 + this.JupiterSize
 				},
 				{
 					name: 'Callisto',
-					size: 0.28, //4821 km
+					size: 2.8, 
 					texture: (__dirname + './../textures/Jupiter/moons/Callisto/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Callisto/normal.png'),
-					velocity: 0.19,
-					distance:  12.5
+					velocity: 0.0019,
+					distance:  29.5 + this.JupiterSize
 				},
 				{
 					name: 'Amalthea',
-					size: 0.001, //167 km
+					size: 0.01, 
 					texture: (__dirname + './../textures/Jupiter/moons/Amalthea/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Amalthea/normal.png'),
-					velocity: 0.6,
-					distance:  1.209
+					velocity: 0.006,
+					distance:  1.09 + this.JupiterSize
 				},
 				{
 					name: 'Himalia',
-					size: 0.0011, //170 km
+					size: 0.011, 
 					texture: (__dirname + './../textures/Jupiter/moons/Himalia/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Himalia/normal.png'),
-					velocity: 0.07,
-					distance:  76.4
+					velocity: 0.0007,
+					distance:  78.4 + this.JupiterSize
 				},
 				{
 					name: 'Elara',
-					size: 0.00056, //86 km
+					size: 0.0056, 
 					texture: (__dirname + './../textures/Jupiter/moons/Elara/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Elara/normal.png'),
-					velocity: 0.07798,
-					distance:  78.27
+					velocity: 0.0007798,
+					distance:  83.27 + this.JupiterSize
 				},
 				{
 					name: 'Pasiphae',
-					size: 0.00052, //86 km
+					size: 0.0052, 
 					texture: (__dirname + './../textures/Jupiter/moons/Pasiphae/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Pasiphae/normal.png'),
-					velocity: (7957.40),
-					distance:  21
+					velocity: 0.0005,
+					distance:  160.49 + this.JupiterSize
 				},
 				{
 					name: 'Lysithea',
-					size: 0.00021, //36 km
+					size: 0.0021, 
 					texture: (__dirname + './../textures/Jupiter/moons/Lysithea/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Lysithea/normal.png'),
-					velocity: (11844),
-					distance:  26
+					velocity: 0.0007,
+					distance:  75.11 + this.JupiterSize
 				},
 				{
 					name: 'Carme',
-					size: 0.00030, //46 km
+					size: 0.0030, 
 					texture: (__dirname + './../textures/Jupiter/moons/Carme/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Carme/normal.png'),
-					velocity: (8110.8),
-					distance:  28
+					velocity: 0.000547,
+					distance:  150 + this.JupiterSize
 				},
 				{
 					name: 'Ananke',
-					size: 0.00019, //28 km
+					size: 0.0019, 
 					texture: (__dirname + './../textures/Jupiter/moons/Ananke/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Ananke/normal.png'),
-					velocity: (8712.00),
-					distance:  30
+					velocity: 0.00058,
+					distance:  137.84 + this.JupiterSize
 				},
 				{
 					name: 'Leda',
-					size: 0.00015, //16 km
+					size: 0.0015, 
 					texture: (__dirname + './../textures/Jupiter/moons/Leda/surface.png'),
 					normal: (__dirname + './../textures/Jupiter/moons/Leda/normal.png'),
-					velocity: (43.2),
-					distance:  33
+					velocity: 0.0008,
+					distance:  70.4 + this.JupiterSize
 				},
 				{
 					name: 'Thebe',
-					size: 0.00060, //96.8 km
+					size: 0.0060,
 					texture: (__dirname + './../textures/Jupiter/moons/Thebe/surface.jpg'),
 					normal: (__dirname + './../textures/Jupiter/moons/Thebe/normal.png'),
-					velocity: (86112),
-					distance:  35
+					velocity: 0.0057,
+					distance:  1.8 + this.JupiterSize
 				},
 				{
 					name: 'Adrastea',
-					size: 0.000152, //16.4 km
+					size: 0.00152,
 					texture: (__dirname + './../textures/Jupiter/moons/Adrastea/surface.png'),
 					normal: (__dirname + './../textures/Jupiter/moons/Adrastea/normal.png'),
-					velocity: (112960.8),
-					distance:  37
+					velocity: 0.0075,
+					distance:  1 + this.JupiterSize
 				}
 
 
@@ -462,7 +452,7 @@ class AppController {
 
 			jupiterMoons.forEach(moon=>{
 
-				this.createMoon(moon.name, moon.size, moon.texture, this.planets['jupiter'], moon.velocity, moon.distance);
+				this.createMoon(moon.name, moon.size, moon.texture, moon.normal, this.planets['jupiter'], moon.velocity, moon.distance);
 
 			});
 
@@ -472,7 +462,7 @@ class AppController {
 
 	initMercury(){
 
-		let texturePath = (__dirname + './../textures/Mercury/surface3.jpg');
+		let texturePath = (__dirname + './../textures/Mercury/surface.jpg');
 		let normalPath = (__dirname + './../textures/Mercury/normal.jpg');
 		this.createPlanet('mercury', 
 			this.MercurySize, 
@@ -493,81 +483,79 @@ class AppController {
 			new BABYLON.Vector3(this.SaturnDistance, 0, 0)
 		).then(()=>{
 			
-			let saturnRing = new BABYLON.MeshBuilder.CreateTorus("saturnRing", {thickness: 0.9, tessellation: 96, diameter: 12}, this.scene);
+			let saturnRing = new BABYLON.MeshBuilder.CreateTorus("saturnRing", {thickness: 7.0, tessellation: 96, diameter: 100}, this.scene);
 	    	saturnRing.scaling = new BABYLON.Vector3(1, 0.1, 1);
 
 	    	let ringMaterial = new BABYLON.StandardMaterial('saturnRingMat', this.scene);
-	    	ringMaterial.diffuseTexture = new BABYLON.Texture(__dirname + './../textures/Saturn/ring1.png', this.scene);
+	    	ringMaterial.diffuseTexture = new BABYLON.Texture(__dirname + './../textures/Saturn/ring.png', this.scene);
 	    	ringMaterial.emissiveColor = new BABYLON.Color3(1,1,1);
 
 	    	saturnRing.material = ringMaterial;
 	    	saturnRing.position = this.planets['saturn'].position;
 
+	    	saturnRing.addLODLevel(7500, null);
+
 	    	this.scene.registerBeforeRender(()=>{
-
-				saturnRing.rotation.y += 0.1;
-
+				saturnRing.rotation.y += 1.5;
 			});
-
-			// The following values have been modified for better viewing, since in the real universe, it would be very difficult to maintain fidelity. 
 
 			let saturnMoons = [
 
 				{
 					name: 'Mimas',
-					size: 0.025, //396.4 km
+					size: 0.25, 
 					texture: (__dirname + './../textures/Saturn/moons/Mimas/surface.jpg'),
 					normal: (__dirname + './../textures/Saturn/moons/Mimas/normal.png'),
-					velocity: (51552),
-					distance:  5 //1221 km
+					velocity: 0.0034,
+					distance:  1.23 + this.SaturnSize
 				},
 				{
 					name: 'Enceladus',
-					size: 0.028, //396.4 km
+					size: 0.28, 
 					texture: (__dirname + './../textures/Saturn/moons/Enceladus/surface.jpg'),
 					normal: (__dirname + './../textures/Saturn/moons/Enceladus/normal.png'),
-					velocity: (45487.3),
-					distance:  7 //1221 km
+					velocity: 0.00303,
+					distance:  2.18 + this.SaturnSize
 				},
 				{
 					name: 'Thetys',
-					size: 0.092, //1062 km
+					size: 0.92, 					
 					texture: (__dirname + './../textures/Saturn/moons/Thetys/surface.jpg'),
 					normal: (__dirname + './../textures/Saturn/moons/Thetys/normal.png'),
-					velocity: (40086.3),
-					distance:  10 //1221 km
+					velocity: 0.00272,
+					distance:  2.96 + this.SaturnSize
 				},
 				{
 					name: 'Dione',
-					size: 0.095, //1122,8 km
+					size: 0.95, 
 					texture: (__dirname + './../textures/Saturn/moons/Dione/surface.jpg'),
 					normal: (__dirname + './../textures/Saturn/moons/Dione/normal.png'),
-					velocity: (36100.4),
-					distance:  12 //1221 km
+					velocity: 0.00240,
+					distance:  3.91 + this.SaturnSize
 				},
 				{
 					name: 'Rhea',
-					size: 0.11, //1.527,6 km
+					size: 1.1,  
 					texture: (__dirname + './../textures/Saturn/moons/Rhea/surface.jpg'),
 					normal: (__dirname + './../textures/Saturn/moons/Rhea/normal.png'),
-					velocity: (30541.4),
-					distance:  13 //1221 km
+					velocity: 0.00203,
+					distance:  5.51 + this.SaturnSize
 				},
 				{
 					name: 'Titan',
-					size: 0.305, //5149.5 km
+					size: 3.05, 
 					texture: (__dirname + './../textures/Saturn/moons/Titan/surface.jpg'),
 					normal: (__dirname + './../textures/Saturn/moons/Titan/normal.png'),
-					velocity: (20051.2),
-					distance:  17 //1221 km
+					velocity: 0.0013,
+					distance:  8.14 + this.SaturnSize
 				},
 				{
 					name: 'Iapetus',
-					size: 0.105, //1.469 km
+					size: 1.05, 
 					texture: (__dirname + './../textures/Saturn/moons/Iapetus/surface.jpg'),
 					normal: (__dirname + './../textures/Saturn/moons/Iapetus/normal.png'),
-					velocity: (11748.8),
-					distance:  19 //1221 km
+					velocity: 0.0007,
+					distance:  23.7 + this.SaturnSize
 				}
 
 
@@ -575,7 +563,7 @@ class AppController {
 
 			saturnMoons.forEach(moon=>{
 
-				this.createMoon(moon.name, moon.size, moon.texture, this.planets['saturn'], moon.velocity, moon.distance);
+				this.createMoon(moon.name, moon.size, moon.texture, moon.normal, this.planets['saturn'], moon.velocity, moon.distance);
 
 			});
 
@@ -594,70 +582,67 @@ class AppController {
 			normalPath
 		).then(()=>{
 			
-			let uranusRing = new BABYLON.MeshBuilder.CreateTorus("uranusRing", {thickness: 0.2, tessellation: 96, diameter: 4}, this.scene);
+			let uranusRing = new BABYLON.MeshBuilder.CreateTorus("uranusRing", {thickness: 3.0, tessellation: 96, diameter: 50}, this.scene);
 	    	uranusRing.scaling = new BABYLON.Vector3(1, 0.1, 1);
-
 	    	let ringMaterial = new BABYLON.StandardMaterial('uranusRingMat', this.scene);
 	    	ringMaterial.diffuseTexture = new BABYLON.Texture(__dirname + './../textures/Uranus/ring.png', this.scene);
 	    	ringMaterial.emissiveColor = new BABYLON.Color3(1,1,1);
-
 	    	uranusRing.material = ringMaterial;
 	    	uranusRing.position = this.planets['uranus'].position;
+	    	uranusRing.addLODLevel(7500, null);
 
 	    	this.scene.registerBeforeRender(()=>{
-
-				uranusRing.rotation.y += 0.01;
-
+				uranusRing.rotation.y += 1.0;
 			});
 
 			let uranusMoons = [
 
 				{
 					name: 'Miranda',
-					size: 0.025, //474 km
+					size: 0.25,
 					texture: (__dirname + './../textures/Uranus/moons/Miranda/surface.jpg'),
 					normal: (__dirname + './../textures/Uranus/moons/Miranda/normal.png'),
-					velocity: (24067.7),
-					distance:  1
+					velocity: 0.016,
+					distance:  1 + this.UranusSize
 				},
 				{
 					name: 'Ariel',
-					size: 0.09, //1159 km
+					size: 0.9,
 					texture: (__dirname + './../textures/Uranus/moons/Ariel/surface.jpg'),
 					normal: (__dirname + './../textures/Uranus/moons/Ariel/normal.png'),
-					velocity: (19832.3),
-					distance:  3
+					velocity: 0.013,
+					distance:  2.27 + this.UranusSize
 				},
 				{
 					name: 'Umbriel',
-					size: 0.091, //1169 km
+					size: 0.91,
 					texture: (__dirname + './../textures/Uranus/moons/Umbriel/surface.jpg'),
 					normal: (__dirname + './../textures/Uranus/moons/Umbriel/normal.png'),
-					velocity: (16804.6),
-					distance:  4
+					velocity: 0.0112,
+					distance:  3.77 + this.UranusSize
 				},
 				{
 					name: 'Titania',
-					size: 0.111, //1578 km
+					size: 1.11,
 					texture: (__dirname + './../textures/Uranus/moons/Titania/surface.jpg'),
 					normal: (__dirname + './../textures/Uranus/moons/Titania/normal.png'),
-					velocity: (13120.0),
-					distance:  6
+					velocity: 0.008,
+					distance:  5.9 + this.UranusSize
 				},
 				{
 					name: 'Oberon',
-					size: 0.11, //1523 km
+					size: 1.1,
 					texture: (__dirname + './../textures/Uranus/moons/Oberon/surface.jpg'),
 					normal: (__dirname + './../textures/Uranus/moons/Oberon/normal.png'),
-					velocity: (11349.2),
-					distance:  7 //9376 km
+					velocity: 0.007566,
+					distance:  7.89 + this.UranusSize
 				}
 
 			];
 
 			uranusMoons.forEach(moon=>{
 
-				this.createMoon(moon.name, moon.size, moon.texture, this.planets['uranus'], moon.velocity, moon.distance);
+				this.createMoon(moon.name, moon.size, moon.texture, moon.normal, this.planets['uranus'], moon.velocity, moon.distance);
 
 			});
 
@@ -679,51 +664,27 @@ class AppController {
 			let neptuneMoons = [
 
 				{
-					name: 'Proteus',
-					size: 0.08, //420 km
-					texture: (__dirname + './../textures/Neptune/moons/Proteus/surface.jpg'),
-					normal: (__dirname + './../textures/Neptune/moons/Proteus/normal.png'),
-					velocity: (27450.7),
-					distance:  8
-				},
-				{
-					name: 'Larissa',
-					size: 0.06, //194 km
-					texture: (__dirname + './../textures/Neptune/moons/Larissa/surface.jpg'),
-					normal: (__dirname + './../textures/Neptune/moons/Larissa/normal.png'),
-					velocity: (34693.4),
-					distance:  6
-				},
-				{
 					name: 'Galatea',
-					size: 0.058, //176 km
+					size: 0.58,
 					texture: (__dirname + './../textures/Neptune/moons/Galatea/surface.jpg'),
 					normal: (__dirname + './../textures/Neptune/moons/Galatea/normal.png'),
-					velocity: (37807.1),
-					distance:  3
-				},
-				{
-					name: 'Despina',
-					size: 0.052, //150 km
-					texture: (__dirname + './../textures/Neptune/moons/Despina/surface.jpg'),
-					normal: (__dirname + './../textures/Neptune/moons/Despina/normal.png'),
-					velocity: (41048.6),
-					distance:  1
+					velocity: 0.025,
+					distance:  1 + this.NeptuneSize
 				},
 				{
 					name: 'Triton',
-					size: 0.17, //2706 km
+					size: 1.7,
 					texture: (__dirname + './../textures/Neptune/moons/Triton/surface.jpg'),
 					normal: (__dirname + './../textures/Neptune/moons/Triton/normal.png'),
-					velocity: (15803.2),
-					distance:  12
+					velocity: 0.0105,
+					distance:  4.365 + this.NeptuneSize
 				}
 
 			];
 
 			neptuneMoons.forEach(moon=>{
 
-				this.createMoon(moon.name, moon.size, moon.texture, this.planets['neptune'], moon.velocity, moon.distance);
+				this.createMoon(moon.name, moon.size, moon.texture, moon.normal, this.planets['neptune'], moon.velocity, moon.distance);
 
 			});
 
@@ -735,7 +696,7 @@ class AppController {
 
 		return new Promise((resolve, reject)=>{
 
-			this.planets[name] = new BABYLON.MeshBuilder.CreateSphere(name, {diameter: size}, this.scene);
+			this.planets[name] = new BABYLON.MeshBuilder.CreateSphere(name, {diameter: size, updatable: true}, this.scene);
 
 			let mat = new BABYLON.StandardMaterial(name+'Material', this.scene);
 			mat.roughness = 10000;
@@ -743,19 +704,9 @@ class AppController {
 			mat.reflectionFresnelParameters = 0;
 
 			if (normal) {
-
 				mat.bumpTexture = new BABYLON.Texture(normal, this.scene);
 				mat.bumpTexture.level = 1;
-				//mat.bumpTexture.scale(100);
-				mat.useParallax = true;
-			    mat.useParallaxOcclusion = true;
-			   	mat.parallaxScaleBias = 0.2;
-			    mat.specularPower = 1000.0;
-			    mat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-
 			}
-
-			//mat.diffuseTexture = new BABYLON.Texture(texturePath, this.scene);
 
 			if (atmosphere) {
 				mat.lightmapTexture = new BABYLON.Texture(atmosphere, this.scene);
@@ -763,8 +714,8 @@ class AppController {
 
 				this.scene.registerBeforeRender(()=>{
 
-					this.planets[name].material.lightmapTexture.uOffset -= 0.0001;
-					this.planets[name].material.lightmapTexture.vOffset -= 0.0001;
+					this.planets[name].material.lightmapTexture.uOffset -= 0.00007;
+					this.planets[name].material.lightmapTexture.vOffset -= 0.00007;
 
 				});
 
@@ -774,12 +725,9 @@ class AppController {
 				mat.freeze();
 			}
 
-			//mat.emissiveColor = new BABYLON.Vector3(0.5,0.5,0.5);
-			//mat.ambientColor = new BABYLON.Vector3(1,1,1);
+
 			mat.diffuseColor = new BABYLON.Color3(1,1,1);
-
 			mat.emissiveTexture = new BABYLON.Texture(texturePath, this.scene);
-
 			this.planets[name].material = mat;
 
 			let variationY = Math.random();
@@ -791,7 +739,7 @@ class AppController {
 			this.planets[name].position = position;
 			this.planets[name].receiveShadows = true;
 
-			this.planets[name].addLODLevel(1500, null);
+			this.planets[name].addLODLevel(7500, null);
 
 			this.scene.registerBeforeRender(()=>{
 
@@ -809,15 +757,13 @@ class AppController {
 
 	}
 
-	createMoon(name, size, texturePath, parent, velocity, distanceFromPlanet = 1.5){
+	createMoon(name, size, texturePath, normalPath, parent, velocity, distanceFromPlanet = 1.5){
 
 		let moon = new BABYLON.MeshBuilder.CreateSphere(name, {diameter: size}, this.scene);
 		let mat = new BABYLON.StandardMaterial(name+'Material', this.scene);
 		mat.diffuseTexture = new BABYLON.Texture(texturePath, this.scene);
-		mat.bumpTexture = new BABYLON.Texture((__dirname + './../textures/Moon/normal.jpg'), this.scene);
-
+		mat.bumpTexture = new BABYLON.Texture(normalPath, this.scene);
 		mat.emissiveColor = new BABYLON.Vector3(1,1,1);
-
 		mat.freeze();
 
 		moon.material = mat;
@@ -825,8 +771,6 @@ class AppController {
 		if (name == 'moon' || name == 'Phobos' || name == 'Deimos') variationY = 0;
 
 		let n = Math.floor(Math.random() * 11);
-
-		//distanceFromPlanet *= 10;
 
 		let xValue = distanceFromPlanet;
 		let zValue = distanceFromPlanet;
@@ -841,9 +785,8 @@ class AppController {
 		moon.parent = parent;
 		parent.billboardMode = BABYLON.BILLBOARDMODE_NONE;
 		moon.billboardMode = BABYLON.BILLBOARDMODE_NONE;
-		//moon.preserveParentRotationForBillboard = true;
 
-		moon.addLODLevel(500, null);
+		moon.addLODLevel(3500, null);
 
 		if (this.highlightMeshes) {
 	    	this.highlightMeshes.addExcludedMesh(moon);
@@ -857,33 +800,18 @@ class AppController {
 	        moon.position.z = zValue * Math.sin(alpha);
 	        alpha += velocity;
 
-	        //moon.rotation.y += 0.000001;
-
 	    });
-
-	}
-
-	controlAtmospheres(){
-
-		this.highlightMeshes = new BABYLON.HighlightLayer('hl', this.scene);
-		this.highlightMeshes.outerGlow = true;
-		this.highlightMeshes.innerGlow = false;
-
-		this.highlightMeshes.blurHorizontalSize = 0.2;
-		this.highlightMeshes.blurVerticalSize = 0.2;
 
 	}
 
 	createUniverseBox(){
 
-		let universeBox = new BABYLON.MeshBuilder.CreateBox("universeBox", {size: 15000.0}, this.scene);
+		this.universeBox = new BABYLON.MeshBuilder.CreateBox("universeBox", {size: 15000.0}, this.scene);
 		let universeBoxMaterial = new BABYLON.StandardMaterial("universeBoxMaterial", this.scene);
 		universeBoxMaterial.backFaceCulling = false;
 		universeBoxMaterial.disableLighting = true;
-		universeBox.material = universeBoxMaterial;
-
-		universeBox.infiniteDistance = true;
-
+		this.universeBox.material = universeBoxMaterial;
+		this.universeBox.infiniteDistance = true;
 		universeBoxMaterial.reflectionTexture = new BABYLON.CubeTexture(__dirname + './../textures/UniverseBox/skybox', this.scene);
 		universeBoxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
 
@@ -893,9 +821,8 @@ class AppController {
 
 		this.eventsController.once('presentation-ended', ()=>{
 
-			this.devCamera.rotation.x = (Math.PI / 2);
-			//this.devCamera.rotation.y = Math.PI / 2;
-			this.devCamera.position = new BABYLON.Vector3(0, 220, 0);
+			this.mainCamera.rotation.x = (Math.PI / 2);
+			this.mainCamera.position = new BABYLON.Vector3(0, 2000, 0);
 
 			for(let name in this.planets){
 
@@ -911,7 +838,7 @@ class AppController {
 						velocity = 0;
 						xValue = this.MercuryDistance * -1;
 						zValue = this.MercuryDistance;
-						velocity = (this.MercuryVelocity / 100000);
+						velocity = (this.MercuryVelocity / 15000);
 						break;
 
 					case 'venus':
@@ -919,7 +846,7 @@ class AppController {
 						velocity = 0;
 						xValue = this.VenusDistance;
 						zValue = this.VenusDistance * -1;
-						velocity = (this.VenusVelocity / 100000);
+						velocity = (this.VenusVelocity / 15000);
 						break;
 
 					case 'earth':
@@ -927,7 +854,7 @@ class AppController {
 						velocity = 0;
 						xValue = this.EarthDistance;
 						zValue = this.EarthDistance;
-						velocity = (this.EarthVelocity / 100000) * -1;
+						velocity = (this.EarthVelocity / 15000) * -1;
 						break;
 
 					case 'mars':
@@ -935,7 +862,7 @@ class AppController {
 						velocity = 0;
 						xValue = this.MarsDistance * -1;
 						zValue = this.MarsDistance;
-						velocity = (this.MarsVelocity / 100000);
+						velocity = (this.MarsVelocity / 15000);
 						break;
 
 					case 'jupiter':
@@ -943,7 +870,7 @@ class AppController {
 						velocity = 0;
 						xValue = this.JupiterDistance;
 						zValue = this.JupiterDistance;
-						velocity = (this.JupiterVelocity / 100000) * -1;
+						velocity = (this.JupiterVelocity / 15000) * -1;
 						break;
 
 					case 'saturn':
@@ -951,7 +878,7 @@ class AppController {
 						velocity = 0;
 						xValue = this.SaturnDistance;
 						zValue = this.SaturnDistance * -1;
-						velocity = (this.SaturnVelocity / 100000);
+						velocity = (this.SaturnVelocity / 15000);
 						break;
 
 					case 'uranus':
@@ -959,7 +886,7 @@ class AppController {
 						velocity = 0;
 						xValue = this.UranusDistance * -1;
 						zValue = this.UranusDistance;
-						velocity = (this.UranusVelocity / 100000);
+						velocity = (this.UranusVelocity / 15000);
 						break;
 
 					case 'neptune':
@@ -967,7 +894,7 @@ class AppController {
 						velocity = 0;
 						xValue = this.NeptuneDistance * -1;
 						zValue = this.NeptuneDistance;
-						velocity = (this.NeptuneVelocity / 100000);
+						velocity = (this.NeptuneVelocity / 15000);
 						break;
 
 				}
@@ -975,7 +902,6 @@ class AppController {
 			    this.scene.registerBeforeRender(()=>{
 
 			        this.planets[name].position.x = xValue * Math.cos(alpha);
-			        //this.planets[name].position.y = 0;
 			        this.planets[name].position.z = zValue * Math.sin(alpha);
 			        alpha += velocity;
 
@@ -989,109 +915,113 @@ class AppController {
 
 	presentPlanets(){
 
-		this.devCamera.rotation.x = (Math.PI * 2);
-		this.devCamera.rotation.y = Math.PI / 2;
+		this.mainCamera.rotation.x = (Math.PI * 2);
+		this.mainCamera.rotation.y = Math.PI / 2;
 
-		this.devCameraVelocityX = 0.5;
+		this.mainCameraVelocityX = 0.5;
 
-		this.scene.registerBeforeRender(()=>{
+		let presentFN = ()=>{
 
 			if (this.timesPresented == 0) {
 
-				if (this.devCamera.position.y > 2.0) {
+				if (this.mainCamera.position.y > 2.0) {
 
-					this.devCamera.position.y -= this.devCameraVelocityX;
+					this.mainCamera.position.y -= this.mainCameraVelocityX;
 					
 				} else {
-					this.devCameraVelocityX = 0.80;
+					this.mainCameraVelocityX = 1.50;
 				}
 
-				if (this.devCamera.position.y <= 2.5) {
+				if (this.mainCamera.position.y <= 2.5) {
 
-					if (this.devCamera.position.x <= (this.MercuryDistance - 2) && this.devCamera.position.x >= (this.MercuryDistance - 5) && this.timesPresented == 0) {
+					if (this.mainCamera.position.x <= (this.MercuryDistance - 2) && this.mainCamera.position.x >= (this.MercuryDistance - 5) && this.timesPresented == 0) {
 
-						this.devCameraVelocityX = 0.006;
-						this.devCamera.position.z += 0.06;
-						this.devCamera.setTarget(this.planets['mercury'].position);
+						this.mainCameraVelocityX = 0.006;
+						this.mainCamera.position.z += 0.06;
+						this.mainCamera.setTarget(this.planets['mercury'].position);
 
 
-					} else if (this.devCamera.position.x <= (this.VenusDistance - 2) && this.devCamera.position.x >= (this.VenusDistance - 5) && this.timesPresented == 0) {
+					} else if (this.mainCamera.position.x <= (this.VenusDistance - 2) && this.mainCamera.position.x >= (this.VenusDistance - 5) && this.timesPresented == 0) {
 						
-						this.devCameraVelocityX = 0.006;
-						this.devCamera.position.z += 0.1;
-						this.devCamera.setTarget(this.planets['venus'].position);
+						this.mainCameraVelocityX = 0.006;
+						this.mainCamera.position.z += 0.2;
+						this.mainCamera.setTarget(this.planets['venus'].position);
 
 
-					} else if (this.devCamera.position.x <= (this.EarthDistance - 2) && this.devCamera.position.x >= (this.EarthDistance - 5) && this.timesPresented == 0) {
+					} else if (this.mainCamera.position.x <= (this.EarthDistance - 2) && this.mainCamera.position.x >= (this.EarthDistance - 5) && this.timesPresented == 0) {
 						
-						this.devCameraVelocityX = 0.006;
-						this.devCamera.position.z += 0.13;
-						this.devCamera.setTarget(this.planets['earth'].position);
+						this.mainCameraVelocityX = 0.006;
+						this.mainCamera.position.z += 0.23;
+						this.mainCamera.setTarget(this.planets['earth'].position);
 
 
-					} else if (this.devCamera.position.x <= (this.MarsDistance - 2) && this.devCamera.position.x >= (this.MarsDistance - 5) && this.timesPresented == 0) {
+					} else if (this.mainCamera.position.x <= (this.MarsDistance - 2) && this.mainCamera.position.x >= (this.MarsDistance - 5) && this.timesPresented == 0) {
 						
-						this.devCameraVelocityX = 0.006;
-						this.devCamera.position.z += 0.14;
-						this.devCamera.setTarget(this.planets['mars'].position);
+						this.mainCameraVelocityX = 0.006;
+						this.mainCamera.position.z += 0.24;
+						this.mainCamera.setTarget(this.planets['mars'].position);
 
 
-					} else if (this.devCamera.position.x <= (this.JupiterDistance - 2) && this.devCamera.position.x >= (this.JupiterDistance - 5) && this.timesPresented == 0) {
+					} else if (this.mainCamera.position.x <= (this.JupiterDistance - 65) && this.mainCamera.position.x >= (this.JupiterDistance - 70) && this.timesPresented == 0) {
 						
-						this.devCameraVelocityX = 0.006;
-						this.devCamera.position.z += 0.27;
-						this.devCamera.setTarget(this.planets['jupiter'].position);
+						this.mainCameraVelocityX = 0.006;
+						this.mainCamera.position.z += 2.47;
+						this.mainCamera.setTarget(this.planets['jupiter'].position);
 
 
-					} else if (this.devCamera.position.x <= (this.SaturnDistance - 2) && this.devCamera.position.x >= (this.SaturnDistance - 5) && this.timesPresented == 0) {
+					} else if (this.mainCamera.position.x <= (this.SaturnDistance - 65) && this.mainCamera.position.x >= (this.SaturnDistance - 70) && this.timesPresented == 0) {
 						
-						this.devCameraVelocityX = 0.006;
-						this.devCamera.position.z += 0.5;
-						this.devCamera.setTarget(this.planets['saturn'].position);
+						this.mainCameraVelocityX = 0.006;
+						this.mainCamera.position.z += 3.9;
+						this.mainCamera.setTarget(this.planets['saturn'].position);
 
 
-					} else if (this.devCamera.position.x <= (this.UranusDistance - 2) && this.devCamera.position.x >= (this.UranusDistance - 5) && this.timesPresented == 0) {
+					} else if (this.mainCamera.position.x <= (this.UranusDistance - 65) && this.mainCamera.position.x >= (this.UranusDistance - 70) && this.timesPresented == 0) {
 						
-						this.devCameraVelocityX = 0.006;
-						this.devCamera.position.z += 0.5;
-						this.devCamera.setTarget(this.planets['uranus'].position);
+						this.mainCameraVelocityX = 0.006;
+						this.mainCamera.position.z += 3.9;
+						this.mainCamera.setTarget(this.planets['uranus'].position);
 
 
-					} else if (this.devCamera.position.x <= (this.NeptuneDistance - 2) && this.devCamera.position.x >= (this.NeptuneDistance - 5) && this.timesPresented == 0) {
+					} else if (this.mainCamera.position.x <= (this.NeptuneDistance - 65) && this.mainCamera.position.x >= (this.NeptuneDistance - 70) && this.timesPresented == 0) {
 						
-						this.devCameraVelocityX = 0.006;
-						this.devCamera.position.z += 0.75;
-						this.devCamera.setTarget(this.planets['neptune'].position);
+						this.mainCameraVelocityX = 0.006;
+						this.mainCamera.position.z += 4.2;
+						this.mainCamera.setTarget(this.planets['neptune'].position);
 
 
 					} else {
 
-						this.devCamera.rotation.x = (Math.PI * 2);
-						this.devCamera.rotation.y = Math.PI / 2;
-						this.devCamera.position.z = 2.5;
+						this.mainCamera.rotation.x = (Math.PI * 2);
+						this.mainCamera.rotation.y = Math.PI / 2;
+						this.mainCamera.position.z = 10.0;
 
 					}
 
-					if (this.timesPresented == 0 && this.devCamera.position.x >= this.NeptuneDistance) {
-						this.devCameraVelocityX = 0;
+					if (this.timesPresented == 0 && this.mainCamera.position.x >= this.NeptuneDistance) {
+						this.mainCameraVelocityX = 0;
 						this.endPresentation();
+						this.scene.unregisterBeforeRender(presentFN);
 					}
 
-					this.devCamera.position.x += this.devCameraVelocityX;
+					this.mainCamera.position.x += this.mainCameraVelocityX;
 
 				}
 
 			} else {
-				this.devCameraVelocityX = 0;
+				this.mainCameraVelocityX = 0;
+				this.scene.unregisterBeforeRender(presentFN);
 			}
 
-		});
+		}
+
+		this.scene.registerBeforeRender(presentFN);
 
 	}
 
 	endPresentation(){
 
-		this.devCameraVelocityX = 0;
+		this.mainCameraVelocityX = 0;
 		this.eventsController.emit('presentation-ended');
 		this.timesPresented = 1;
 
@@ -1163,7 +1093,7 @@ class AppController {
 				switch (e.event.key.toUpperCase()) {
 
 					case 'SHIFT':
-						this.devCamera.speed = 50;
+						this.mainCamera.speed = 50;
 						break;
 				
 				}
@@ -1173,7 +1103,7 @@ class AppController {
 				switch (e.event.key.toUpperCase()) {
 
 					case 'SHIFT':
-						this.devCamera.speed = this.cameraInitialSpeed;
+						this.mainCamera.speed = this.cameraInitialSpeed;
 						break;
 				
 				}
@@ -1188,7 +1118,7 @@ class AppController {
 
 	controlPlanetsGUI(){
 
-		let maxDistanceToVisibleGUI = 4000;
+		let maxDistanceToVisibleGUI = 7500;
 		let minDistanceToVisibleGUI = 0;
 
 		this.scene.registerBeforeRender(()=>{
@@ -1231,7 +1161,7 @@ class AppController {
 					
 				}
 
-				if (this.devCamera.position.equalsWithEpsilon(this.planets[planet].position, minDistanceToVisibleGUI) || !this.devCamera.position.equalsWithEpsilon(this.planets[planet].position, maxDistanceToVisibleGUI)) {
+				if (this.mainCamera.position.equalsWithEpsilon(this.planets[planet].position, minDistanceToVisibleGUI) || !this.mainCamera.position.equalsWithEpsilon(this.planets[planet].position, maxDistanceToVisibleGUI)) {
 
 					this.planetsGUIs[planet].box.isVisible = false;
 
