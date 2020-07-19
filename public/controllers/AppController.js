@@ -76,6 +76,7 @@ class AppController {
 		this.controlLoadingItems();
 		this.initializeStars();
 		this.initGUI();
+		this.createPlanetsViews();
 
 		this.engine.runRenderLoop(()=>{
 			this.scene.render();
@@ -245,7 +246,7 @@ class AppController {
 			new BABYLON.Color3(0, 0.5, 0.6)
 		).then(()=>{
 
-			this.createMoon('moon', this.MoonSize, (__dirname + './../textures/Moon/surface.jpg'), (__dirname + './../textures/Moon/normal.jpg'), this.planets['earth'], 0.002316333, 2.562667 + this.EarthSize);
+			this.createMoon('moon', this.MoonSize, (__dirname + './../textures/Moon/surface.jpg'), (__dirname + './../textures/Moon/normal.png'), this.planets['earth'], 0.002316333, 2.562667 + this.EarthSize);
 
 			this.planets['earth'].material.lightmapTexture.uAng = Math.PI;
 			this.planets['earth'].material.lightmapTexture.invertZ = true;
@@ -913,7 +914,29 @@ class AppController {
 
 	}
 
+	disableCameraInputs(){
+
+		this.mainCamera.inputs.attached.keyboard.keysBackward = [];
+		this.mainCamera.inputs.attached.keyboard.keysDown = [];
+		this.mainCamera.inputs.attached.keyboard.keysLeft = [];
+		this.mainCamera.inputs.attached.keyboard.keysRight = [];
+		this.mainCamera.inputs.attached.keyboard.keysUp = [];
+
+	}
+
+	enableCameraInputs(){
+
+		this.mainCamera.inputs.attached.keyboard.keysBackward = [83];
+		this.mainCamera.inputs.attached.keyboard.keysDown = [81];
+		this.mainCamera.inputs.attached.keyboard.keysLeft = [65];
+		this.mainCamera.inputs.attached.keyboard.keysRight = [68];
+		this.mainCamera.inputs.attached.keyboard.keysUp = [69];
+
+	}
+
 	presentPlanets(){
+
+		this.disableCameraInputs();
 
 		this.mainCamera.rotation.x = (Math.PI * 2);
 		this.mainCamera.rotation.y = Math.PI / 2;
@@ -1021,6 +1044,8 @@ class AppController {
 
 	endPresentation(){
 
+		this.enableCameraInputs();
+
 		this.mainCameraVelocityX = 0;
 		this.eventsController.emit('presentation-ended');
 		this.timesPresented = 1;
@@ -1105,6 +1130,10 @@ class AppController {
 					case 'SHIFT':
 						this.mainCamera.speed = this.cameraInitialSpeed;
 						break;
+
+					case 'V':
+						this.toggleCamera();
+						break;
 				
 				}
 
@@ -1172,6 +1201,56 @@ class AppController {
 			}
 
 		});
+
+	}
+
+	createPlanetsViews(){
+
+		this.sceneCams = [];
+
+		for(let planet in this.planets){
+
+			this.sceneCams.push({
+				name: planet,
+				camera: new BABYLON.ArcFollowCamera(planet+"FollowCam", 0, 0, 20, this.planets[planet], this.scene)
+			});
+
+		}
+
+		this.sceneCams.push({
+			name: 'mainCamera',
+			camera: this.mainCamera
+		});
+
+	}
+
+	toggleCamera(){
+
+		let element = this.sceneCams.shift();
+
+		if (element.name != 'mainCamera') {
+
+			switch (element.name) {
+
+				case 'neptune':
+				case 'uranus':
+				case 'saturn':
+				case 'jupiter':
+					element.camera.radius = 160;
+					element.camera.heightOffset = 280;
+					break;
+
+			}
+
+			this.planets[element.name].billboardMode = BABYLON.BILLBOARDMODE_NONE;
+			element.camera.billboardMode = BABYLON.BILLBOARDMODE_NONE;
+			element.camera.lockedTarget = this.planets[element.name];
+
+		}
+
+		this.scene.activeCamera = element.camera;
+		this.scene.activeCamera.attachControl(this.canvas, true);
+		this.sceneCams.push(element);
 
 	}
 

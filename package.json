@@ -1,20 +1,25 @@
 {
-  "name": "solar-system-3d",
+  "name": "3D-Solar-System",
   "version": "1.0.0",
-  "description": "",
+  "description": "A simple 3D model of our solar system.",
+  "productName": "3D Solar System",
   "main": "main.js",
   "dependencies": {
     "babylonjs": "^4.1.0",
     "babylonjs-gui": "^4.1.0",
     "babylonjs-loaders": "^4.1.0",
     "babylonjs-materials": "^4.1.0",
-    "babylonjs-procedural-textures": "^4.1.0",
-    "electron": "^9.0.5"
+    "babylonjs-procedural-textures": "^4.1.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+  	"electron": "^9.0.5"
+  },
   "scripts": {
     "start": "electron .",
-    "win64": "electron-packager . Solar System 3D --platform=win32 --arch=x64 --asar"
+    "win64": "electron-packager . Solar System 3D --platform=win32 --arch=x64 --asar",
+    "package-mac": "electron-packager . --overwrite --platform=darwin --arch=x64 --icon=public/icon.ico --prune=true --out=Solar-System-3D",
+	"package-win": "electron-packager . 3D-Solar-System --overwrite --asar --platform=win32 --arch=x64 --icon=public/icon.ico --prune=true --out=Solar-System-3D --version-string.ProductName=\"3D Solar System\"",
+	"package-linux": "electron-packager . electron-tutorial-app --overwrite --asar=true --platform=linux --arch=x64 --icon=public/icon.ico --prune=true --out=Solar-System-3D"
   },
   "repository": {
     "type": "git",
