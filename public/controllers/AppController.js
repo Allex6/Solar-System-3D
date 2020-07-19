@@ -122,13 +122,9 @@ class AppController {
 
 	}
 
-	controlLoadingItems(){
+	optimizeSceneAsync(){
 
-		this.engine.loadingScreen.displayLoadingUI();
-
-		this.scene.whenReadyAsync().then(()=>{
-
-			this.engine.loadingScreen.hideLoadingUI();
+		return new Promise((resolve, reject)=>{
 
 			let options = new BABYLON.SceneOptimizerOptions();
 			options.addOptimization(new BABYLON.HardwareScalingOptimization(0, 2));
@@ -137,6 +133,22 @@ class AppController {
 			options.addOptimization(new BABYLON.MergeMeshesOptimization(0));
 
 			BABYLON.SceneOptimizer.OptimizeAsync(this.scene, options, ()=>{
+				resolve();
+			});
+
+		});
+
+	}
+
+	controlLoadingItems(){
+
+		this.engine.loadingScreen.displayLoadingUI();
+
+		this.scene.whenReadyAsync().then(()=>{
+
+			this.engine.loadingScreen.hideLoadingUI();
+
+			this.optimizeSceneAsync().then(()=>{
 				this.presentPlanets();
 			});
 
@@ -144,7 +156,7 @@ class AppController {
 
 		let check = ()=>{
 
-			window.document.getElementById("items-remaining-to-be-loaded").innerHTML = this.scene.getWaitingItemsCount();
+			window.document.getElementById("objects-remaining-count").innerHTML = this.scene.getWaitingItemsCount();
 
 			if (this.scene.getWaitingItemsCount() == 0) {
 				this.scene.unregisterBeforeRender(check);
@@ -164,10 +176,6 @@ class AppController {
 		class LoadingScreen {
 
 			displayLoadingUI(){
-				loadingScreenDiv.innerHTML = `
-					<h1>Loading...</h1> 
-					<p style='font-size: 24px;'><span id='items-remaining-to-be-loaded'>${t.scene.getWaitingItemsCount()}</span> Items remaining...</p>
-				`;
 				loadingScreenDiv.style.display = 'flex';
 				t.canvas.style.display = 'none';
 			}
@@ -1133,6 +1141,10 @@ class AppController {
 
 					case 'V':
 						this.toggleCamera();
+						break;
+
+					case 'O':
+						this.optimizeSceneAsync();
 						break;
 				
 				}
